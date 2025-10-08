@@ -815,7 +815,8 @@ nl_div = nl_diversion(product_data, rho_sat, rho_wired)
 
 \textbf{Results:}
 
-\textit{Own-Price Elasticities:} The nested logit model substantially underestimates own-price elasticities (Mean Absolute \% Error: 27.27\%):
+\textit{Own-Price Elasticities:} True elasticities computed using analytical derivatives of the RC logit model: $\frac{\partial s_j}{\partial p_k} = \alpha \mathbb{E}[s_{ij}(1-s_{ij})]$ (own-price) and $\frac{\partial s_j}{\partial p_k} = -\alpha \mathbb{E}[s_{ij}s_{ik}]$ (cross-price), where expectations are taken over the 10,000 pre-drawn simulation draws of random coefficients $(\beta_i^{(2)}, \beta_i^{(3)}) \sim N(4,1)$ for each market. Nested logit elasticities computed analytically using Berry (1994) formulas: own-price $\varepsilon_{jj} = \frac{\alpha p_j}{s_j}[-(1-\rho)s_j - \rho s_j/s_{g|j}]$, within-nest cross-price $\varepsilon_{jk} = \frac{\alpha p_k}{s_j}[(1-\rho)s_k + \rho s_k/s_{g|j}]$, and across-nest cross-price $\varepsilon_{jk} = \frac{\alpha p_k s_k}{s_j}$, where $s_{g|j}$ is the share of nest $g$ containing product $j$ and $\rho$ is the nest-specific correlation parameter. The nested logit model substantially underestimates true own-price elasticities:
+
 
 \begin{center}
 \begin{tabular}{lrrr}
@@ -830,7 +831,10 @@ Wired 2 & $-4.724$ & $-3.913$ & 17.16\% \\
 \end{tabular}
 \end{center}
 
-\textit{Diversion Ratios:} True vs Estimated $D_{jk} = -(\partial s_k/\partial p_j) / (\partial s_j/\partial p_j)$ (diagonal = diversion to outside):
+\textit{Diversion Ratios:} 
+True vs Estimated $D_{jk} = -(\partial s_k/\partial p_j) / (\partial s_j/\partial p_j).$ 
+
+Diversion to the outside good reported on the diagonal instead of $D_{jj}=-1.$ Nested logit diversion ratios computed using Conlon and Mortimer (2018) formulas: within-nest $D_{jk}^* = s_{k|g} / (Z_j^{-1} - s_{j|g})$ where $Z_j = \rho + (1-\rho)s_g$ and $s_{j|g}$ is product $j$'s share within nest $g$, and across-nest $D_{jk}^{**} = s_k(1-\rho_k) / (1 - s_{j|g}Z_j)$ where $\rho_k$ is the nesting parameter of product $k$'s nest.
 
 True Diversion (RC Logit):
 \begin{center}
@@ -846,8 +850,6 @@ Wired 2 & 0.275 & 0.294 & 0.413 & 0.018 \\
 \end{tabular}
 \end{center}
 
-\textit{Note:} True diversion ratios computed from RC logit elasticities using analytical derivatives $\frac{\partial s_j}{\partial p_k} = \alpha \mathbb{E}[s_{ij}(1-s_{ij})]$ (own-price) and $\frac{\partial s_j}{\partial p_k} = -\alpha \mathbb{E}[s_{ij}s_{ik}]$ (cross-price), where expectations are taken over the 10,000 pre-drawn simulation draws of random coefficients $(\beta_i^{(2)}, \beta_i^{(3)}) \sim N(4,1)$ for each market. Elasticities are converted to derivatives, then diversion ratios are $D_{jk} = -(\partial s_k/\partial p_j) / (\partial s_j/\partial p_j)$ with diagonal elements capturing diversion to the outside option.
-
 Estimated Diversion (Nested Logit):
 \begin{center}
 \begin{tabular}{lrrrr}
@@ -862,7 +864,7 @@ Wired 2 & 0.158 & 0.169 & 0.309 & 0.364 \\
 \end{tabular}
 \end{center}
 
-The nested logit severely overestimates diversion to the outside option (diagonal: 0.02 vs 0.37-0.58) and underestimates cross-product substitution, especially between nests. This reflects the model's failure to capture the true random coefficient structure.
+The nested logit severely overestimates diversion to the outside option (diagonal: 0.02 vs 0.37-0.58) and underestimates cross-product substitution. This reflects the model's failure to capture the true random coefficient structure.
 
 \section{Estimate the Correctly Specified Model}
 
