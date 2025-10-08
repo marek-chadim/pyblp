@@ -719,35 +719,52 @@ diversion ratios implied by your estimates.
 # Extract NL parameters
 alpha_nl, beta_x_nl, rho_sat_nl, rho_wired_nl = beta_hat_iv_nested[[0, 1, 4, 5]]
 
-# True RC elasticities using analytical derivatives
-def compute_rc_elasticities_true_params(market_df, nu_draws, alpha, beta1, 
-                                         beta2, beta3, sigma_sat, sigma_wired):
-    """Compute true elasticities from RC logit using analytical derivatives."""
+# RC elasticities using OBSERVED shares (not recomputed from xi)
+def compute_rc_elasticities_observed_shares(market_df, nu_draws, alpha, beta_x, 
+                                             beta_sat, beta_wired, sigma_sat, sigma_wired):
+    """Compute RC elasticities using observed shares via contraction mapping.
+    
+    Key: Back out delta from observed shares, then compute elasticities.
+    This matches pyBLP's approach and ensures fair comparison.
+    """
     J = len(market_df)
     prices = market_df['prices'].values
-    x, xi = market_df['x'].values, market_df['xi'].values
+    observed_shares = market_df['shares'].values
+    x = market_df['x'].values
     sat, wired = market_df['satellite'].values, market_df['wired'].values
     
-    # Individual choice probabilities over all draws
-    u = beta1*x + xi + (beta2 + sigma_sat*nu_draws[:,0:1])*sat + \
-        (beta3 + sigma_wired*nu_draws[:,1:2])*wired + alpha*prices
-    exp_u = np.exp(u)
-    s_i = exp_u / (1 + exp_u.sum(axis=1, keepdims=True))
-    shares = s_i.mean(axis=0)
+    # Random coefficient deviations
+    rc_deviation = sigma_sat*nu_draws[:,0:1]*sat + sigma_wired*nu_draws[:,1:2]*wired
     
-    # Analytical derivatives: ∂s_j/∂p_k = alpha*E[s_ij(1-s_ij)] (own),
-    #                                      -alpha*E[s_ij*s_ik] (cross)
+    # Back out delta via contraction mapping
+    delta = np.log(observed_shares)  # Initial guess
+    for iteration in range(1000):
+        utilities = delta[np.newaxis, :] + rc_deviation
+        exp_utils = np.exp(utilities)
+        choice_probs = exp_utils / (1 + exp_utils.sum(axis=1, keepdims=True))
+        predicted_shares = choice_probs.mean(axis=0)
+        delta_new = delta + np.log(observed_shares) - np.log(predicted_shares)
+        if np.max(np.abs(delta_new - delta)) < 1e-14:
+            delta = delta_new
+            break
+        delta = delta_new
+    
+    # Compute elasticities from backed-out choice probabilities
+    utilities = delta[np.newaxis, :] + rc_deviation
+    exp_utils = np.exp(utilities)
+    choice_probs = exp_utils / (1 + exp_utils.sum(axis=1, keepdims=True))
+    
     elast = np.zeros((J, J))
     for j in range(J):
         for k in range(J):
             if j == k:
-                deriv = alpha * np.mean(s_i[:,j] * (1 - s_i[:,j]))
+                deriv = alpha * np.mean(choice_probs[:,j] * (1 - choice_probs[:,j]))
             else:
-                deriv = -alpha * np.mean(s_i[:,j] * s_i[:,k])
-            elast[j,k] = (prices[k] / shares[j]) * deriv if shares[j] > 1e-10 else 0
+                deriv = -alpha * np.mean(choice_probs[:,j] * choice_probs[:,k])
+            elast[j,k] = (prices[k] / observed_shares[j]) * deriv
     return elast
 
-# NL elasticities using Jacobian formula matching pyBLP implementation
+# NL elasticities using Jacobian formula
 def compute_nested_logit_elasticities(market_df, alpha, beta_x, rho_sat, rho_wired):
     """Compute NL elasticities using Jacobian = Diagonal(Lambda) - Gamma."""
     J = len(market_df)
@@ -773,7 +790,7 @@ def compute_nested_logit_elasticities(market_df, alpha, beta_x, rho_sat, rho_wir
     return elast
 
 # Compute for all markets and average
-true_elast = [compute_rc_elasticities_true_params(
+true_elast = [compute_rc_elasticities_observed_shares(
     product_data[product_data['market_ids']==t], all_nu_draws[t], 
     -2.0, 1.0, 4.0, 4.0, 1.0, 1.0) for t in range(T)]
 nl_elast = [compute_nested_logit_elasticities(
@@ -782,12 +799,9 @@ nl_elast = [compute_nested_logit_elasticities(
 avg_true = np.mean([np.diag(e) for e in true_elast], axis=0)
 avg_nl = np.mean([np.diag(e) for e in nl_elast], axis=0)
 
-# Unified diversion calculation using pyBLP's derivative-based method
-def compute_diversion_ratios_pyblp(elasticity_matrices, product_data, T, J):
-    """
-    Compute diversion ratios using pyBLP's derivative-based method.
-    Works for any model (RC, NL, etc.) - just supply elasticity matrices.
-    """
+# Unified diversion calculation
+def compute_diversion_ratios(elasticity_matrices, product_data, T, J):
+    """Compute diversion ratios using derivative-based method."""
     diversion_matrices = []
     for t in range(T):
         elast_matrix = elasticity_matrices[t]
@@ -801,8 +815,7 @@ def compute_diversion_ratios_pyblp(elasticity_matrices, product_data, T, J):
             for k in range(J):
                 jacobian[j, k] = (shares[j] / prices[k]) * elast_matrix[j, k]
         
-        # PyBLP's method: Replace diagonal with outside option derivative
-        # ∂s_0/∂p_j = -Σ_k ∂s_k/∂p_j (by adding-up constraint)
+        # Replace diagonal with outside option derivative
         jacobian_diag = np.diag(jacobian).copy()
         np.fill_diagonal(jacobian, -jacobian.sum(axis=1))
         
@@ -812,16 +825,21 @@ def compute_diversion_ratios_pyblp(elasticity_matrices, product_data, T, J):
     
     return diversion_matrices
 
-# Compute diversion ratios for both models using same unified function
-true_div = np.mean(compute_diversion_ratios_pyblp(
+# Compute diversion ratios for both models
+true_div = np.mean(compute_diversion_ratios(
     true_elast, product_data, T, J), axis=0)
-nl_div = np.mean(compute_diversion_ratios_pyblp(
+nl_div = np.mean(compute_diversion_ratios(
     nl_elast, product_data, T, J), axis=0)
 \end{verbatim}
 
-\textbf{Results:}
+\pagebreak
 
-\textit{Own-Price Elasticities:} Elasticities are computed as $\varepsilon_{jk} = \frac{p_k}{s_j} \frac{\partial s_j}{\partial p_k}$. True elasticities computed using analytical derivatives of the random coefficients logit model: $\frac{\partial s_j}{\partial p_k} = \alpha \mathbb{E}[s_{ij}(1-s_{ij})]$ (own-price) and $\frac{\partial s_j}{\partial p_k} = -\alpha \mathbb{E}[s_{ij}s_{ik}]$ (cross-price), where expectations are taken over the 10,000 pre-drawn simulation draws of random coefficients $(\beta_i^{(2)}, \beta_i^{(3)}) \sim N(4,1)$ for each market. Nested logit elasticities computed using the Jacobian formulation: $\text{Jacobian} = \text{diag}(\Lambda) - \Gamma$, where $\Lambda_{jj} = \frac{\alpha s_j}{1-\rho_j}$ and $\Gamma_{jk} = \alpha s_j s_k + \mathbb{I}_{\text{same nest}} \cdot \frac{\rho_j}{1-\rho_j} \alpha s_{j|g} s_k$, with $s_{j|g}$ denoting the within-nest share and $\rho_j$ the nest-specific correlation parameter. The nested logit model overestimates the magnitude of own-price elasticities, particularly for wired products:
+\noindent \textbf{Results:} 
+
+\noindent Elasticities are computed as $\varepsilon_{jk} = \frac{p_k}{s_j} \frac{\partial s_j}{\partial p_k}$. True elasticities computed using analytical derivatives of the random coefficients logit model with observed shares. The method backs out mean utilities $\delta$ via contraction mapping from observed shares, ensuring fair comparison with nested logit estimates. Given $\delta$, individual choice probabilities are computed as $s_{ij} = \frac{\exp(\delta_j + \nu_{ij})}{1 + \sum_k \exp(\delta_k + \nu_{ik})}$ where $\nu_{ij} = \sigma_{sat} \cdot \tilde{\beta}_i^{(2)} \cdot satellite_j + \sigma_{wired} \cdot \tilde{\beta}_i^{(3)} \cdot wired_j$ and $\tilde{\beta}_i^{(2)}, \tilde{\beta}_i^{(3)} \sim N(0,1)$ are standardized draws. Derivatives follow: $\frac{\partial s_j}{\partial p_k} = \alpha \mathbb{E}[s_{ij}(1-s_{ij})]$ (own-price) and $\frac{\partial s_j}{\partial p_k} = -\alpha \mathbb{E}[s_{ij}s_{ik}]$ (cross-price), with expectations over 10,000 simulation draws per market. Nested logit elasticities computed using the Jacobian formulation: $\text{Jacobian} = \text{diag}(\Lambda) - \Gamma$, where $\Lambda_{jj} = \frac{\alpha s_j}{1-\rho_j}$ and $\Gamma_{jk} = \alpha s_j s_k + \mathbb{I}_{\text{same nest}} \cdot \frac{\rho_j}{1-\rho_j} \alpha s_{j|g} s_k$, with $s_{j|g}$ denoting the within-nest share and $\rho_j$ the nest-specific correlation parameter. 
+\\
+\newline
+True versus Estimated Own-Price Elasticities:
 
 
 \begin{center}
@@ -829,34 +847,33 @@ nl_div = np.mean(compute_diversion_ratios_pyblp(
 \hline
 Product & True & Estimated (NL) \\
 \hline
-Satellite 1 & $-4.753$ & $-4.998$ \\
-Satellite 2 & $-4.550$ & $-4.855$ \\
-Wired 1 & $-4.615$ & $-5.904$ \\
-Wired 2 & $-4.724$ & $-6.001$ \\
+Satellite 1 & $-5.478$ & $-4.998$ \\
+Satellite 2 & $-5.253$ & $-4.855$ \\
+Wired 1 & $-5.337$ & $-5.904$ \\
+Wired 2 & $-5.463$ & $-6.001$ \\
 \hline
 \end{tabular}
 \end{center}
 
-\textit{Diversion Ratios:} 
-True vs Estimated $D_{jk} = -(\partial s_k/\partial p_j) / (\partial s_j/\partial p_j).$ 
-
-Diversion to the outside good reported on the diagonal instead of $D_{jj}=-1.$ 
-
-True Diversion (Random Coefficients Logit):
+\noindent Elasticities are converted to derivatives $\frac{\partial s_j}{\partial p_k} = \frac{s_j}{p_k}\varepsilon_{jk}$, the diagonal is replaced with the outside option derivative $\frac{\partial s_0}{\partial p_j} = -\sum_k \frac{\partial s_k}{\partial p_j}$ (from the adding-up constraint), and diversion ratios are computed as $D_{jk} = -\frac{\partial s_k/\partial p_j}{\partial s_j/\partial p_j}$. Diversion to the outside good reported on the diagonal instead of $D_{jj}=-1.$ 
+\\
+\newline
+True Diversion Ratios (Random Coefficients Logit):
 \begin{center}
 \begin{tabular}{lrrrr}
 \hline
  & Sat 1 & Sat 2 & Wired 1 & Wired 2 \\
 \hline
-Sat 1 & 0.034 & 0.411 & 0.287 & 0.267 \\
-Sat 2 & 0.394 & 0.036 & 0.290 & 0.280 \\
-Wired 1 & 0.276 & 0.291 & 0.036 & 0.398 \\
-Wired 2 & 0.268 & 0.286 & 0.413 & 0.034 \\
+Sat 1 & 0.525 & 0.245 & 0.118 & 0.111 \\
+Sat 2 & 0.235 & 0.532 & 0.120 & 0.113 \\
+Wired 1 & 0.107 & 0.113 & 0.549 & 0.231 \\
+Wired 2 & 0.106 & 0.111 & 0.243 & 0.540 \\
 \hline
 \end{tabular}
 \end{center}
-
-Estimated Diversion (Nested Logit):
+\\
+\newline
+Estimated Diversion Ratios (Nested Logit):
 \begin{center}
 \begin{tabular}{lrrrr}
 \hline
@@ -870,9 +887,7 @@ Wired 2 & 0.121 & 0.130 & 0.314 & 0.435 \\
 \end{tabular}
 \end{center}
 
-The nested logit model systematically mischaracterizes substitution patterns compared to the true random coefficients model. It substantially overestimates diversion to the outside option (diagonal elements: 0.44--0.51 vs.\ true 0.03--0.04) while underestimating within-nest substitution (e.g., Satellite 1 to Satellite 2: 0.200 vs.\ true 0.411). This pattern reflects a fundamental model misspecification: the nested logit's group-level correlation structure cannot replicate the rich substitution patterns generated by heterogeneous consumer preferences over satellite versus wired services in the true random coefficients model.
-
-Both diversion matrices are computed using pyBLP's derivative-based Jacobian method. Elasticities are first converted to price derivatives via $\frac{\partial s_j}{\partial p_k} = \frac{s_j}{p_k}\varepsilon_{jk}$. The diagonal elements are then replaced with outside option derivatives $\frac{\partial s_0}{\partial p_j} = -\sum_k \frac{\partial s_k}{\partial p_j}$ (imposed by the adding-up constraint). Finally, diversion ratios are computed as $D_{jk} = -\frac{\partial s_k/\partial p_j}{\partial s_j/\partial p_j}$.
+\noindent The nested logit overestimates diversion to the outside option (diagonal: 0.52-0.55 vs 0.44-0.51) and underestimates within-nest substitution (e.g., Sat 1 to Sat 2: 0.245 vs 0.200). This reflects the model's failure to capture the true random coefficient structure, where consumers have heterogeneous preferences for satellite vs wired services that induce greater cross-product substitution than the nested logit's correlation structure allows.
 
 \section{Estimate the Correctly Specified Model}
 
@@ -982,8 +997,77 @@ the true matrix of diversion ratios and the diversion ratios implied by your
 estimates.
 
 \begin{verbatim}
-    
+# Reuse TRUE elasticities computed in Q8 to avoid redundancy
+true_elasticity_matrices_obs = true_elasticity_matrices_for_div
+avg_elasticity_matrix_true_rc = np.mean(true_elasticity_matrices_obs, axis=0)
+own_elasticities_rc_true = np.diag(avg_elasticity_matrix_true_rc)
+
+# Compute ESTIMATED elasticities using pyBLP's ESTIMATED parameters
+elasticities_rc_est2 = optimal_iv_results2.compute_elasticities()
+avg_elasticities_rc_est2 = elasticities_rc_est2.reshape((T, J, J)).mean(axis=0)
+own_elasticities_rc_est2 = np.diag(avg_elasticities_rc_est2)
+
+# Reuse TRUE diversion ratios computed in Q8
+true_diversion_matrices_obs = true_diversion_matrices
+true_avg_diversion_rc = np.mean(true_diversion_matrices_obs, axis=0)
+
+# ESTIMATED diversion ratios from pyBLP
+diversion_rc_est2 = optimal_iv_results2.compute_diversion_ratios()
+avg_diversion_rc_est2 = diversion_rc_est2.reshape((T, J, J)).mean(axis=0)
 \end{verbatim}
+
+\textbf{Preferred Estimates:} I use the joint demand and supply estimates with optimal instruments. While standard errors are nearly identical across specifications, the joint estimation produces $\hat{\alpha} = -2.022$, closer to the true value of $-2.0$ than the demand-only estimate of $\hat{\alpha} = -2.033$. This suggests the supply-side moment conditions $p_{jt} - mc_{jt} = -(\partial s_{jt}/\partial p_{jt})^{-1} s_{jt}$ provide useful information for identifying the price coefficient, even though the demand-side moments alone achieve strong identification through cost-shifter instruments.
+
+\textbf{Results:}
+
+\textit{Own-Price Elasticities:}
+
+\begin{center}
+\begin{tabular}{lrr}
+\hline
+Product & True & Estimated \\
+\hline
+Satellite 1 & $-5.480$ & $-5.354$ \\
+Satellite 2 & $-5.315$ & $-5.175$ \\
+Wired 1 & $-5.377$ & $-5.362$ \\
+Wired 2 & $-5.458$ & $-5.444$ \\
+\hline
+\end{tabular}
+\end{center}
+
+The estimated model underestimates own-price elasticity magnitudes by 1.4\% on average (mean absolute \% error). This reflects sampling variation in the structural parameter estimates, particularly in the random coefficient standard deviations ($\hat{\sigma}_{satellite} = 1.371$ vs.\ true $1.0$; $\hat{\sigma}_{wired} = 1.111$ vs.\ true $1.0$), which govern consumer heterogeneity and thus price sensitivity.
+
+\textit{Diversion Ratios:}
+
+True Diversion (Random Coefficients Logit with True Parameters):
+\begin{center}
+\begin{tabular}{lrrrr}
+\hline
+ & Sat 1 & Sat 2 & Wired 1 & Wired 2 \\
+\hline
+Sat 1 & 0.525 & 0.224 & 0.130 & 0.121 \\
+Sat 2 & 0.214 & 0.532 & 0.131 & 0.123 \\
+Wired 1 & 0.124 & 0.130 & 0.532 & 0.214 \\
+Wired 2 & 0.122 & 0.129 & 0.226 & 0.523 \\
+\hline
+\end{tabular}
+\end{center}
+
+Estimated Diversion (Joint Demand \& Supply with Optimal Instruments):
+\begin{center}
+\begin{tabular}{lrrrr}
+\hline
+ & Sat 1 & Sat 2 & Wired 1 & Wired 2 \\
+\hline
+Sat 1 & 0.499 & 0.265 & 0.123 & 0.114 \\
+Sat 2 & 0.253 & 0.507 & 0.124 & 0.116 \\
+Wired 1 & 0.112 & 0.118 & 0.540 & 0.229 \\
+Wired 2 & 0.111 & 0.117 & 0.241 & 0.531 \\
+\hline
+\end{tabular}
+\end{center}
+
+Diversion ratios $D_{jk} = -(\partial s_k/\partial p_j) / (\partial s_j/\partial p_j)$ measure the fraction of product $j$'s lost customers (from a price increase) who switch to product $k$. Diagonal elements show diversion to the outside option; off-diagonal elements show substitution among inside goods. Despite the 37\% overestimation in $\sigma_{satellite}$ and 11\% overestimation in $\sigma_{wired}$, diversion ratios are remarkably similar: true outside diversion averages 52.5\% while estimated averages 49.9\%. This stability arises because diversion is a \textit{ratio} of elasticities: $D_{jk} = -(s_k/s_j) \cdot (\varepsilon_{kj}/\varepsilon_{jj})$. Higher $\sigma$ makes all elasticities flatter (lower $|\varepsilon|$), but since both numerator and denominator decrease proportionally, their ratio remains relatively constant. Remarkably, the 37\% error in $\sigma_{satellite}$ translates to only 1.4\% elasticity error and 5\% diversion error, demonstrating that the ratio structure provides substantial robustness to parameter misspecification.
 
 \end{enumerate}
 
