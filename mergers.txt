@@ -1,0 +1,850 @@
+Merger Analysis
+
+Concentration
+
+UPP
+
+Nevo/Fan
+
+Overview of Merger Analysis
+Phil Haile
+Yale University
+
+Fall 2025
+
+Logit Magic
+
+Welfare
+
+Merger Analysis
+
+Concentration
+
+UPP
+
+Nevo/Fan
+
+Logit Magic
+
+Merger Analysis
+Some possible goals: assess effects of merger(s) on prices, product offerings,
+innovation, other market outcomes.
+• positive analysis
+
+• antitrust policy: enforcement of competition policy
+(e.g., U.S. DOJ and FTC)
+▶ “rule of reason”
+▶ goal: block mergers that would harm consumers or “harm competition”
+▶ total welfare typically not treated as the relevant objective
+▶ main focus is typically on prices
+▶ recently: less clear notions of harms through firm size
+▶ one of the few ways that policy makers can affect market structure.
+
+Welfare
+
+Merger Analysis
+
+Concentration
+
+UPP
+
+Nevo/Fan
+
+Logit Magic
+
+Welfare
+
+Broad Categories
+1. horizontal merger
+▶ merger between firms competing for same consumers
+▶ e.g., American-USAir, AT&T-DirecTV, Cigna-Anthem, Humana-Aetna,
+Aon-WillisTowersWatson
+
+2. vertical merger
+▶ merger between firms producing at different stages of a sequential production process
+▶ e.g., Microsoft-Nokia, AT&T-TimeWarner
+▶ see July 2021 issue of Review of IO
+The distinction between these labels is not sharp.
+
+Merger Analysis
+
+Concentration
+
+UPP
+
+Nevo/Fan
+
+Logit Magic
+
+Welfare
+
+Some Possible Effects of a Merger
+1. internalize competitive externalities (soften competition), “unilateral effects”
+2. internalize inefficient pricing externalties (e.g., double marginalization, pricing of
+complements)
+3. make collusion easier? “coordinated effects”
+4. soften/enhance incentives to innovate?
+5. production “efficiencies” (economies of scale/scope, or lower incentive costs)?
+6. enhanced bargaining power against upstream suppliers, workers
+7. extension of market power in one market (e.g., wholesale) to another (e.g., retail).
+
+Merger Analysis
+
+Concentration
+
+UPP
+
+Nevo/Fan
+
+Logit Magic
+
+Retrospective Merger Analysis
+The Idea: look at actual prices etc. before and after a merger
+
+• clearly interesting, but challenges
+• few if any natural experiments
+▶ data only for approved mergers
+▶ even proposal of merger depends on market unobservables (e.g., anticipated profits)
+and antitrust policy
+
+• endogeneiity/selection biases are not easily fixed: one needs model of merger
+proposal and merger approval, and exclusion restrictions to provide exogenous
+variation
+• and probably useless for agency evaluating a proposed merger.
+
+Welfare
+
+Merger Analysis
+
+Concentration
+
+UPP
+
+Nevo/Fan
+
+Logit Magic
+
+Welfare
+
+Prospective Merger Analysis
+Natural idea for IO economist:
+• estimate model of supply and demand on pre-merger data
+
+• counterfactual simulation:
+▶ change ownership structure to reflect merger
+▶ simulate new equilibrium outcomes (e.g., prices)
+▶ include any expected efficiencies
+▶ in principle possible to include other endogenous outcomes (e.g., as in Fan)
+
+Can capture unilateral effects and merger efficiencies in one coherent framework. May
+still need more to address coordinated effects, investment incentives, upstream
+bargaining power,. . . .
+
+Merger Analysis
+
+Concentration
+
+UPP
+
+Nevo/Fan
+
+Logit Magic
+
+BLP-style Merger Analysis
+
+• several papers in academic literature
+• historically less common in antitrust policy
+▶ requires expertise, time, and good data
+▶ not easily understood by lawyers, judges
+▶ not always easily understood by economists not trained in modern empirical IO
+
+• but gradually becoming more widely used (in combination with other analysis),
+sometimes with simple (e.g., MNLogit, nested logit) demand model.
+
+Welfare
+
+Merger Analysis
+
+Concentration
+
+UPP
+
+Nevo/Fan
+
+If not BLP, what?
+
+• internal documents regarding competition, motivation to merge
+• theoretical arguments (direction of effects)
+• generalize from (typically flawed) retrospective empirics
+• market “concentration” analysis
+• “upward pricing pressure” analysis.
+
+Logit Magic
+
+Welfare
+
+Merger Analysis
+
+Concentration
+
+UPP
+
+Nevo/Fan
+
+Logit Magic
+
+Herfindahl Index of Concentration
+
+• market “concentration” ≈ small number of firms sell most of the output in the
+market
+• one concentration index (“Herfindahl” index): H = ∑f sf2
+▶ sf is firm i’s market share×100
+▶ in general,
+an arbitrary functional form
+reflects firm costs, csr demand, and firm behavior
+not a meaningful measure of firm behavior, competitiveness, or welfare.
+
+Welfare
+
+Merger Analysis
+
+Concentration
+
+UPP
+
+Nevo/Fan
+
+Logit Magic
+
+Welfare
+
+Concentration Analysis
+
+So why look at concentration?
+• old traditions die hard
+
+• most judges, if they learned economics at all, learned it a long time ago
+• Herfindahl seems natural because the extremes DO have an interpetation
+• modern IO is beyond the reach of most (lawyers, judges) not trained in economics
+
+Merger Analysis
+
+Concentration
+
+UPP
+
+Nevo/Fan
+
+Logit Magic
+
+Concentration Analysis
+What does one do with a Herfindahl?
+• common practice: compare pre- and post-merger Herfindahl indices
+▶ doing this correctly would require post-merger equilibrium
+▶ typically: people just add pre-merger shares
+
+• historically: established thresholds for “safe harbor” or “presumption of harm”
+▶ initial index value
+▶ change in index value
+
+• efficiencies then analyzed separately
+• a key issue: what is the “relevant market” (denominator of share)?
+
+Welfare
+
+Merger Analysis
+
+Concentration
+
+UPP
+
+Nevo/Fan
+
+Logit Magic
+
+“Market Definition”
+The problem
+• market share among what set of transactions?
+▶ YNH-St. Rafael share among New Haven hospitals or among all hospitals in
+NY-NJ-CT-PA Combined Statistical Area?
+▶ Oracle-Peoplesoft share among producers of back-office business software producers
+or all software producers?
+
+• what do we even mean by “the relevant market”?
+▶ many debates, but if Herfindahl analysis itself makes no sense, there simply is no
+right answer!
+
+Welfare
+
+Merger Analysis
+
+Concentration
+
+UPP
+
+Nevo/Fan
+
+Logit Magic
+
+Welfare
+
+Market Definition by “SSNIP Test”
+• traditional criterion:“small but significant non-transitory increase in price”
+▶ consider sequence of market definitions (set of competing products), increasingly
+broad
+▶ what is the smallest one such that a hypothetical monopolist in this market would
+find it profitable to raise price. . . by at least 5% over current price, for at least a year
+
+• idea: what is the smallest market (set of products) that would be profitable to
+monopolize and raise price > 5%?
+▶ too few products→raising price mostly “diverts” consumers to other firms, so large
+price increase not profitable
+▶ with enough products→essentially all diversion is to seller’s own products, large price
+increase profitable
+
+• formal justification for SSNIP: none.
+
+Merger Analysis
+
+Concentration
+
+UPP
+
+Nevo/Fan
+
+Logit Magic
+
+SSNIP in Practice
+How do we answer the question for SNNIP test?
+• from BLP-type estimation and simulation?
+(this would be/is crazy: if we have estimated BLP model, why bother with
+SSNIP+Herfindahls rather than directly looking at price changes and welfare??!!)
+• from aggregate consumer “inflows”/“outflows”
+▶ e.g., patients→hospitals; what is the geographic market?
+▶ in the relevant market, few from outside, few to outside
+▶ (few typically means < 10%, again arbitrary, no connection to 5% price increase)
+▶ idea: imports/exports ⇐⇒ competition from outside
+▶ used to study many hospital mergers in 1990s
+▶ Capps, Dranove, & Satterthwaite (2003) showed that this can be very misleading.
+
+Welfare
+
+Merger Analysis
+
+Concentration
+
+UPP
+
+Nevo/Fan
+
+Logit Magic
+
+Market Concentration Analysis Today
+
+Herfindahl indices are usually still part of DOJ/FTC merger analysis, but typically not
+decisive on their own, at least in the agencies’ decisions about challenging mergers.
+One should treat them as one descriptive feature of the industry with at most a crude
+relationship to market power or likely harm from a merger.
+
+Welfare
+
+Merger Analysis
+
+Concentration
+
+UPP
+
+Nevo/Fan
+
+Logit Magic
+
+Upward Pricing Pressure: Origins
+Two firms before merger. For pre-merger firm 1
+π1 = (p1 − c1 ) Q1 (p )
+FOC :
+∂Q1 (p )
+(p1 − c1 ) + Q1 (p ) = 0
+∂p1
+Post-Merger Pricing of Firm 1’s Product:
+π = [p1 − (1 − E1 ) c1 ] Q1 (p ) + [p2 − (1 − E2 ) c2 ] Q2 (p )
+
+∂π
+∂p1
+
+=
+
+∂Q1
+∂Q1
+∂Q2
++ [p2 − (1 − E2 ) c2 ]
+(p1 − c1 ) + Q1 (p ) +E 1 c1
+∂p
+∂p1
+∂p1
+| 1
+{z
+}
+= 0 at pre-merger eqm.
+
+Welfare
+
+Merger Analysis
+
+Concentration
+
+UPP
+
+Nevo/Fan
+
+Logit Magic
+
+Welfare
+
+Upward Pricing Pressure
+So, starting from pre-merger prices, for the merged firm
+∂π
+∂Q1
+∂Q2
+= E1 c1
++ [p2 − (1 − E2 ) c2 ]
+∂p1
+∂p1
+∂p1
+1
+Divide through by − ∂Q
+∂p1 :
+
+∂Q2 /∂p1
+∂Q /∂p
+| 1{z 1}
+“diversion rate from firm 1 to 2”
+
+−E1 c1 − [p2 − (1 − E2 ) c2 ]
+
+≡ UPP1
+Before consider any efficiencies,
+∂Q2 /∂p1
+∂Q1 /∂p1
+which measures the gain in profit from good 2 (internalized post-merger) when raise p1
+enough to reduce output by one unit.
+UPP1 = [p2 − c2 ]
+
+Merger Analysis
+
+Concentration
+
+UPP
+
+Nevo/Fan
+
+Logit Magic
+
+UPP
+
+UPP1 = [p2 − c2 ]
+
+∂Q2 /∂p1
+∂Q1 /∂p1
+
+Idea: UPP measures net direction and magnitude of “first-round” incentives for
+changes in price p1 due to merger-induced internalization of competitive pricing
+externalities
+• size depends on size of pricing externality: how much diversion? how profitable?
+
+• and on size of efficiency: large E1 could offset upward pricing pressure
+• symmetric for UPP2 .
+
+Welfare
+
+Merger Analysis
+
+Concentration
+
+UPP
+
+Nevo/Fan
+
+Logit Magic
+
+Upward Pricing Pressure: Why?
+
+UPP is meant to be a shortcut that avoids the need to estimate demand and run a
+merger simulation. Perceived benefits of UPP include:
+• little/no need to define market (this is correct)
+2 /∂p1
+• don’t need many parameters of demand system, “just” diversion ratio ∂Q
+∂Q1 /∂p1
+(something correct: scalar price coefficient α does cancel)
+• no need to simulate post-merger equilibrium
+• more limited data needs: diversion ratio at one point, pre-merger margins.
+
+Welfare
+
+Merger Analysis
+
+Concentration
+
+UPP
+
+Nevo/Fan
+
+Logit Magic
+
+Welfare
+
+This is, at least partly, Confusion
+• diversion ratio requires most demand derivatives
+▶ common practice: infer from market shares via logit formula
+(two derivatives “learned” from a single vector of market shares: no price variation
+needed/useful! when arbitrary functional forms perform miracles, you should be
+worried!)
+▶ “second choice” surveys or “churn” patterns: suggestive, related, but generally don’t
+measure the right object (see recent work by Conlon and Mortimer)
+
+• still need margins too; accounting cost data available from the merging parties
+subject to usual concerns; the alternative requires demand derivatives
+• the hard part of a full merger simulation isn’t simulating the equilibrium but
+estimating demand. The shortcut of calculating only UPP doesn’t help much.
+
+Merger Analysis
+
+Concentration
+
+UPP
+
+Nevo/Fan
+
+Logit Magic
+
+Welfare
+
+Upward Pricing Pressure: Other Limitations
+
+• inherently local analysis
+• ignores responses of other firms
+• even ignores effects of changes in p2 on optimal p1 !
+• =⇒ even if we somehow have good estimates of diversion and markups, attempts
+to infer magnitudes of post-merger price effects from UPP statistics can be badly
+misleading, and this is an exercise where the magnitudes are what matters.
+
+Merger Analysis
+
+Concentration
+
+UPP
+
+Nevo/Fan
+
+Logit Magic
+
+Welfare
+
+Upward Pricing Pressure: A Useful Observation
+
+In practice, a key question is sometimes: how big would the merger efficiencies need to
+be to avoid consumer harm?
+UPP alone CAN answer this: if we find the % reduction (applied to both firms’
+marginal costs) that leads to zero UPP, then all FOC post-merger are identical to
+those pre-merger. This allows one to avoid computing equilibrium and consumer
+surplus, and to rely only on local measures of demand responses/diversion ratios.
+(still need good estimates of these diversion ratios, however).
+
+Merger Analysis
+
+Concentration
+
+UPP
+
+Nevo/Fan
+
+Logit Magic
+
+Welfare
+
+BLP-Based Merger Simulation
+Some Limitations Too
+• good for examining effects of merger on equilibrium prices
+
+• not always easy to allow for effects on other product characteristics (but see Fanr)
+• does not address facilitation of collusion
+• alone does not address incentives for investment, entry, exit, other mergers
+UPP doesn’t deal with these either. So UPP might be a useful first pass, and is more
+tied to equilibrium behavior than SSNIP. But few advantages over BLP-style
+analysis—e.g., if going to use MNL as demand model, it is fairly easy to do full BLP
+merger analysis. More sophisticated options are now available in pyBLP.
+
+Merger Analysis
+
+Concentration
+
+UPP
+
+Nevo/Fan
+
+Next: Applications
+
+Logit Magic
+
+Welfare
+
+Merger Analysis
+
+Concentration
+
+UPP
+
+Nevo/Fan
+
+Logit Magic
+
+Nevo (2000)
+
+RTE Cereals
+• essentially same demand model/estimates from Nevo 2001 (but why not use the
+supply moments now?)
+• use price-setting FOC to infer markups (marginal costs)
+
+• change ownership structure and simulate new equilibrium
+• ask what cost efficiency would be sufficient to result in zero net effect on prices
+• compare predictions to ex post data for the actual mergers.
+
+Welfare
+
+Merger Analysis
+
+Concentration
+
+UPP
+
+Nevo/Fan
+
+Logit Magic
+
+Welfare
+
+Fan (2013): Newspapers
+U.S. Newspaper markets (1990-2000s)
+• similar broad idea, but several twists
+
+• two-sided market: firms sell to consumers and advertisers
+• csrs can subscribe to more than one
+• endogenous prices and product quality (more IV)
+• partially overlapping markets: separate notions of “market” vs. “which firms
+compete”
+• nice illustration of a type of Waldfogel IV (demographics of “neighbors” that alter
+markups)
+• simulations of hypothetical mergers (and one actual): non-price impacts could be
+as important and price impacts.
+
+Merger Analysis
+
+Concentration
+
+UPP
+
+Nevo/Fan
+
+Logit Magic
+
+Useful Fact
+
+Some logit magic. . .
+• let κ1 , . . . , κJ be constants
+
+• suppose ϵ1 , . . . , ϵJ ∼ iid type 1 extreme value (MNL)
+• then
+!
+
+
+κj
+Eϵ max {κj + ϵj } = ln ∑ e
++ constant.
+j
+
+j
+
+Welfare
+
+Merger Analysis
+
+Concentration
+
+UPP
+
+
+
+Nevo/Fan
+
+
+
+Eϵ max {κj + ϵj } = ln
+j
+
+∑e
+
+Logit Magic
+
+Welfare
+
+!
+κj
+
++constant.
+
+j
+
+Examples of use:
+1. Eϵ [maxj {κj + ϵj }] is ex ante value of the choice problem
+h
+i
+′
+2. Eϵ [maxj ∈J {κj + ϵj }] − Eϵ maxj ∈J {κj + ϵj } is the expected value of being able
+to choose from the set J instead of J ′ . Used, e.g., to evaluate the value of new
+product, or value of adding hospital to insurer network.
+3. If conditional indirect utilities are xj β i − αi pj + ϵij , maxj ∈J {xj β i − αi pj + ϵij } is
+the indirect utility; so
+
+
+
+
+
+′
+Eϵ max xj β i − αi pj + ϵij − Eϵ max {xj β i − αi pj + ϵij }
+j
+
+j
+
+is the compensating variation for price change from p to p ′ for a consumer with
+type (αi , β i ). Useful for welfare analysis.
+
+Merger Analysis
+
+Concentration
+
+UPP
+
+Nevo/Fan
+
+Next: Some comments on welfare
+
+Logit Magic
+
+Welfare
+
+Merger Analysis
+
+Concentration
+
+UPP
+
+Nevo/Fan
+
+Logit Magic
+
+Comments on Welfare: The Role of Epsilon
+A reminder: As a model of behavior (e.g., demand elasticities) we can interpret ϵijt as
+(a) unobserved taste, (b) consumer misperception of product, (c) device for allowing
+“errors” in choices. (This observation pre-dates even McFadden.)
+But for welfare analysis, we must choose an interpretation. Standard is to treat as
+taste shock, i.e., ϵijt “counts” toward welfare. This is not necessary, although it
+maintains the usual connection of welfare to revealed preference. With large support
+for ϵ vector, it also has some undesirable features much like “red bus/blue bus”
+example: adding a red bus when already have a blue bus will give arbitrarily large
+welfare gains to positive measure of consumers. (Not just in logit models!) Random
+coeffs reduce this effect, but still present.
+
+Welfare
+
+Merger Analysis
+
+Concentration
+
+UPP
+
+Nevo/Fan
+
+Logit Magic
+
+Welfare
+
+Comments on Welfare: Valid Aggregate Welfare Measures
+In general, obtaining valid notions of aggregate welfare is a tricky business. Beware
+that applied work often ignores important nuances (from first-year micro or even
+freshman micro) necessary to justify aggregate welfare statements (absent Pareto
+rankings).
+Use of compensating/equivalent variation is best practice and relies on the notion of a
+“potential Pareto improvement,” i.e., an increase in social welfare if we assume optimal
+redistribution (according to whatever the correct SWF is). Same as “Kaldor-Hicks”
+efficiency.
+This has its limitations. But it is usually viewed as the only proper theoretical
+foundation for aggregate welfare statements. Otherwise we get in the business of
+comparing utilities across people (or, equivalently, taking a stand on what the correct
+SWF is).
+
+Merger Analysis
+
+Concentration
+
+UPP
+
+Nevo/Fan
+
+Logit Magic
+
+Comments on Welfare: Individual Welfare?
+In Nevo (any estimated random utility model), one could construct not only
+CS/CV/EV, but also the entire distribution of individual welfare changes. This is true
+despite the fact that we have no consumer level choice data. This should worry you.
+Note, e.g., that in general a given change in the joint CDF of random utilities tells us
+nothing about what happens to any individual consumer.
+The functional form of the model allows us to map aggregate demand to a population
+of individual demand and individual welfare. The functional forms in this case then
+serve not only to approximate demand but also for decomposition of aggregate
+behavior into individual behavior. Beware of miracles performed by functional forms!
+
+Welfare
+
+Merger Analysis
+
+Concentration
+
+UPP
+
+Nevo/Fan
+
+Logit Magic
+
+Comments on Welfare: Local vs. Non-Local Changes
+Regardless of the model and data, some types of welfare questions are more difficult
+than others. This is clear already from classical linear supply and demand case.
+e.g., for measuring welfare implications of a small tax, assuming linear demand and
+supply (or other functional forms) may not matter much because analysis is local and
+only changes (not levels) matter. For measuring the value created by a good,
+however, we have to integrate under the demand curve all the way up to the “choke
+price.” Typically this will rely heavily on extrapolation using our assumptions about
+tails of preference distributions.
+
+Welfare
+
+Merger Analysis
+
+Concentration
+
+UPP
+
+Nevo/Fan
+
+Logit Magic
+
+Comments on Welfare: Summary
+
+Welfare analysis is hard but too important to ignore.
+• We should do our best, paying attention to the underlying theory, acknowledging
+honestly the limitations we are forced to live with
+• Waiting for perfection produces no knowledge and often results in letting less
+informed analysis guide decision making.
+• Overstating the case is bad science and will backfire, at least in the long run.
+
+Welfare
+
+
