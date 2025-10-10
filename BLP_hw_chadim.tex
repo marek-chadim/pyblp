@@ -821,10 +821,10 @@ Wired 2 & $-5.463$ & $-6.001$ \\
 \begin{center}
 \begin{tabular}{lrrrr}
 \hline
- & Sat 1 & Sat 2 & Wired 1 & Wired 2 \\
+ & Satellite 1 & Satellite 2 & Wired 1 & Wired 2 \\
 \hline
-Sat 1 & 0.525 & 0.245 & 0.118 & 0.111 \\
-Sat 2 & 0.235 & 0.532 & 0.120 & 0.113 \\
+Satellite 1 & 0.525 & 0.245 & 0.118 & 0.111 \\
+Satellite 2 & 0.235 & 0.532 & 0.120 & 0.113 \\
 Wired 1 & 0.107 & 0.113 & 0.549 & 0.231 \\
 Wired 2 & 0.106 & 0.111 & 0.243 & 0.540 \\
 \hline
@@ -835,10 +835,10 @@ Wired 2 & 0.106 & 0.111 & 0.243 & 0.540 \\
 \begin{center}
 \begin{tabular}{lrrrr}
 \hline
- & Sat 1 & Sat 2 & Wired 1 & Wired 2 \\
+ & Satellite 1 & Satellite 2 & Wired 1 & Wired 2 \\
 \hline
-Sat 1 & 0.508 & 0.200 & 0.152 & 0.141 \\
-Sat 2 & 0.190 & 0.514 & 0.153 & 0.143 \\
+Satellite 1 & 0.508 & 0.200 & 0.152 & 0.141 \\
+Satellite 2 & 0.190 & 0.514 & 0.153 & 0.143 \\
 Wired 1 & 0.124 & 0.129 & 0.445 & 0.303 \\
 Wired 2 & 0.121 & 0.130 & 0.314 & 0.435 \\
 \hline
@@ -984,10 +984,10 @@ True Diversion (Random Coefficients Logit with True Parameters):
 \begin{center}
 \begin{tabular}{lrrrr}
 \hline
- & Sat 1 & Sat 2 & Wired 1 & Wired 2 \\
+ & Satellite 1 & Satellite 2 & Wired 1 & Wired 2 \\
 \hline
-Sat 1 & 0.525 & 0.224 & 0.130 & 0.121 \\
-Sat 2 & 0.214 & 0.532 & 0.131 & 0.123 \\
+Satellite 1 & 0.525 & 0.224 & 0.130 & 0.121 \\
+Satellite 2 & 0.214 & 0.532 & 0.131 & 0.123 \\
 Wired 1 & 0.124 & 0.130 & 0.532 & 0.214 \\
 Wired 2 & 0.122 & 0.129 & 0.226 & 0.523 \\
 \hline
@@ -998,10 +998,10 @@ Estimated Diversion (Joint Demand \& Supply with Optimal Instruments):
 \begin{center}
 \begin{tabular}{lrrrr}
 \hline
- & Sat 1 & Sat 2 & Wired 1 & Wired 2 \\
+ & Satellite 1 & Satellite 2 & Wired 1 & Wired 2 \\
 \hline
-Sat 1 & 0.499 & 0.265 & 0.123 & 0.114 \\
-Sat 2 & 0.253 & 0.507 & 0.124 & 0.116 \\
+Satellite 1 & 0.499 & 0.265 & 0.123 & 0.114 \\
+Satellite 2 & 0.253 & 0.507 & 0.124 & 0.116 \\
 Wired 1 & 0.112 & 0.118 & 0.540 & 0.229 \\
 Wired 2 & 0.111 & 0.117 & 0.241 & 0.531 \\
 \hline
@@ -1032,7 +1032,7 @@ equilibrium prices.
 
 \begin{verbatim}
 # Pre-merger baseline
-product_labels = ['Sat 1', 'Sat 2', 'Wired 1', 'Wired 2']
+product_labels = ['Satellite 1', 'Satellite 2', 'Wired 1', 'Wired 2']
 pre_merger_prices = product_data['prices'].values
 pre_merger_prices_avg = pre_merger_prices.reshape((T, J)).mean(axis=0)
 
@@ -1064,8 +1064,8 @@ merger_results_df = pd.DataFrame({'Product': product_labels,
 \hline
 Product & Firm (Pre) & Firm (Post) & Pre-Merger & Post-Merger & Change (\$) & Change (\%) \\
 \hline
-Sat 1 & 1 & 1 & 3.3381 & 3.5499 & 0.2118 & 6.34 \\
-Sat 2 & 2 & 1 & 3.2858 & 3.4852 & 0.1994 & 6.07 \\
+Satellite 1 & 1 & 1 & 3.3381 & 3.5499 & 0.2118 & 6.34 \\
+Satellite 2 & 2 & 1 & 3.2858 & 3.4852 & 0.1994 & 6.07 \\
 Wired 1 & 3 & 3 & 3.3210 & 3.3236 & 0.0026 & 0.08 \\
 Wired 2 & 4 & 4 & 3.3253 & 3.3278 & 0.0025 & 0.08 \\
 \hline
@@ -1112,8 +1112,8 @@ comparison_df = pd.DataFrame({
 \hline
 Product & Firm (Pre) & Firm (Post) & Pre-Merger & Post-Merger & Change (\$) & Change (\%) \\
 \hline
-Sat 1 & 1 & 1 & 3.3381 & 3.4218 & 0.0837 & 2.51 \\
-Sat 2 & 2 & 2 & 3.2858 & 3.2902 & 0.0044 & 0.13 \\
+Satellite 1 & 1 & 1 & 3.3381 & 3.4218 & 0.0837 & 2.51 \\
+Satellite 2 & 2 & 2 & 3.2858 & 3.2902 & 0.0044 & 0.13 \\
 Wired 1 & 3 & 1 & 3.3210 & 3.4006 & 0.0796 & 2.40 \\
 Wired 2 & 4 & 4 & 3.3253 & 3.3287 & 0.0035 & 0.10 \\
 \hline
@@ -1127,8 +1127,8 @@ Wired 2 & 4 & 4 & 3.3253 & 3.3287 & 0.0035 & 0.10 \\
 \hline
 Product & Within-Nest (\%) & Cross-Nest (\%) & Difference (pp) \\
 \hline
-Sat 1 & 6.34 & 2.51 & $-3.84$ \\
-Sat 2 & 6.07 & 0.13 & $-5.94$ \\
+Satellite 1 & 6.34 & 2.51 & $-3.84$ \\
+Satellite 2 & 6.07 & 0.13 & $-5.94$ \\
 Wired 1 & 0.08 & 2.40 & 2.32 \\
 Wired 2 & 0.08 & 0.10 & 0.03 \\
 \hline
@@ -1223,8 +1223,8 @@ delta_w_with_eff = total_delta_cs_with_eff + delta_ps_with_eff
 \hline
 Product & Firm (Pre) & Firm (Post) & Pre-Merger & Post-Merger & Change (\$) & Change (\%) \\
 \hline
-Sat 1 & 1 & 1 & 3.3381 & 3.2625 & $-0.0756$ & $-2.26$ \\
-Sat 2 & 2 & 1 & 3.2858 & 3.2075 & $-0.0782$ & $-2.38$ \\
+Satellite 1 & 1 & 1 & 3.3381 & 3.2625 & $-0.0756$ & $-2.26$ \\
+Satellite 2 & 2 & 1 & 3.2858 & 3.2075 & $-0.0782$ & $-2.38$ \\
 Wired 1 & 3 & 3 & 3.3210 & 3.3164 & $-0.0046$ & $-0.14$ \\
 Wired 2 & 4 & 4 & 3.3253 & 3.3212 & $-0.0041$ & $-0.12$ \\
 \hline
@@ -1236,8 +1236,8 @@ Wired 2 & 4 & 4 & 3.3253 & 3.3212 & $-0.0041$ & $-0.12$ \\
 \hline
 Product & No Efficiency (\%) & With 15\% Cost Cut (\%) & Difference (pp) \\
 \hline
-Sat 1 & 6.34 & $-2.26$ & $-8.61$ \\
-Sat 2 & 6.07 & $-2.38$ & $-8.45$ \\
+Satellite 1 & 6.34 & $-2.26$ & $-8.61$ \\
+Satellite 2 & 6.07 & $-2.38$ & $-8.45$ \\
 Wired 1 & 0.08 & $-0.14$ & $-0.22$ \\
 Wired 2 & 0.08 & $-0.12$ & $-0.20$ \\
 \hline
@@ -1299,16 +1299,24 @@ Total welfare is:
 \]
 This decomposes into productive efficiency gains (cost savings on units sold) minus allocative inefficiency (welfare loss from reduced consumption):
 \[
-\Delta W = \sum_{t=1}^{T} M_t \left[\sum_j (mc_{jt}^{\text{pre}} - mc_{jt}^{\text{post}}) \cdot Q_{jt}^{\text{post}} - \sum_j \int_{Q_{jt}^{\text{post}}}^{Q_{jt}^{\text{pre}}} (P_j(q) - mc_{jt}^{\text{post}}) \, dq\right],
+\Delta W = \sum_{t=1}^{T} M_t \Bigg[ 
+\sum_j \big( mc_{jt}^{\text{pre}} - mc_{jt}^{\text{post}} \big) \, Q_{jt}^{\text{post}} 
+- \sum_j \left| \int_{Q_{jt}^{\text{post}}}^{Q_{jt}^{\text{pre}}} \big( P_j(q) - mc_{jt}^{\text{post}} \big) \, dq \right|
+\Bigg].
 \]
 where the integral represents deadweight loss from foregone trades when prices rise. Both components scale with $M_t$. Without actual market sizes, we cannot value efficiency gains or compare them to consumer harm in dollar terms. Aggregate welfare statements require proper weighting across heterogeneous markets.
 
 
 \subsection*{Merger Simulations Summary}
-The table below presents complementary results across all merger scenarios analyzed:
+
+\noindent In sum, the within-nest merger without efficiencies (firms 1\&2) generates the largest price increase (\$0.104), while the cross-nest merger (firms 1\&3) produces smaller effects (\$0.043). The 15\% cost reduction reverses price effects ($-$\$0.041). Markups increase in all scenarios through internalization of competitive externalities, with the largest increase (\$0.050) under efficiency gains, where cost reductions permit higher percentage markups despite lower prices.
+
+Average profit per product increases by \$0.003 (within-nest), \$0.002 (cross-nest), and \$0.023 (with efficiency), reflecting recaptured margins and, in the efficiency case, substantial cost savings. Average consumer surplus falls under both anti-competitive mergers ($-$\$0.030 within-nest, $-$\$0.017 cross-nest) but rises (\$0.036) when cost pass-through dominates unilateral effects. Three patterns emerge: (1) merger effects scale with diversion ratios between merging products; (2) cross-category mergers generate smaller competitive harm than within-category mergers; (3) merger-specific efficiencies can reverse welfare effects when cost reductions are large relative to market power increases.
+
+
 \begin{center}
 \small
-\resizebox{.9\textwidth}{!}{%
+\resizebox{.95\textwidth}{!}{%
 \begin{tabular}{lccccccc}
 \hline
 Metric & Pre-Merger & \makecell{Merger 1\&2\\(No Eff)} & \makecell{Merger 1\&3\\(Cross)} & \makecell{Merger 1\&2\\(15\% Cut)} & \makecell{$\Delta$ (1\&2\\$-$ Pre)} & \makecell{$\Delta$ (1\&3\\$-$ Pre)} & \makecell{$\Delta$ (15\% Cut\\$-$ Pre)} \\
@@ -1323,13 +1331,11 @@ Avg CS (\$) & 0.462 & 0.432 & 0.445 & 0.498 & $-0.030$ & $-0.017$ & 0.036 \\
 \end{center}
 \footnotesize{\emph{Note: Averages computed across 600 markets and 4 products. Avg Price = mean price per product; Avg Markup = mean markup $(p_{jt} - mc_{jt})$ per product; Avg Profit = mean producer surplus per product; Avg CS = mean consumer surplus per capita. Assumed market size: $1{,}000$ consumers per market (600,000 total consumers).}}
 
-\noindent The within-nest merger without efficiencies (firms 1\&2) generates the largest price increase (\$0.104), while the cross-nest merger (firms 1\&3) produces smaller effects (\$0.043). The 15\% cost reduction reverses price effects ($-$\$0.041). Markups increase in all scenarios through internalization of competitive externalities, with the largest increase (\$0.050) under efficiency gains, where cost reductions permit higher percentage markups despite lower prices.
-
-Average profit per product increases by \$0.003 (within-nest), \$0.002 (cross-nest), and \$0.023 (with efficiency), reflecting recaptured margins and, in the efficiency case, substantial cost savings. Consumer surplus falls under both anti-competitive mergers ($-$\$0.030 within-nest, $-$\$0.017 cross-nest) but rises (\$0.036) when cost pass-through dominates unilateral effects. Three patterns emerge: (1) merger effects scale with diversion ratios between merging products; (2) cross-category mergers generate smaller competitive harm than within-category mergers; (3) merger-specific efficiencies can reverse welfare effects when cost reductions are large relative to market power increases.
 
 \pagebreak
 
 \bibliographystyle{ecta}
 \bibliography{BLP_hw_chadim}
+
 
 \end{document}
