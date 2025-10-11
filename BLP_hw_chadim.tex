@@ -1299,9 +1299,9 @@ Total welfare is:
 \]
 This decomposes into productive efficiency gains (cost savings on units sold) minus allocative inefficiency (welfare loss from reduced consumption):
 \[
-\Delta W = \sum_{t=1}^{T} M_t \Bigg[ 
-\sum_j \big( mc_{jt}^{\text{pre}} - mc_{jt}^{\text{post}} \big) \, Q_{jt}^{\text{post}} 
-- \sum_j \left| \int_{Q_{jt}^{\text{post}}}^{Q_{jt}^{\text{pre}}} \big( P_j(q) - mc_{jt}^{\text{post}} \big) \, dq \right|
+\Delta W = \sum_{t=1}^{T} M_t \Bigg[
+\sum_j \big( mc_{jt}^{\mathrm{pre}} - mc_{jt}^{\mathrm{post}} \big)\, Q_{jt}^{\mathrm{post}}
+- \sum_j \int_{Q_{jt}^{\mathrm{post}}}^{Q_{jt}^{\mathrm{pre}}} \big( P_j(q) - mc_{jt}^{\mathrm{post}} \big)\, dq
 \Bigg].
 \]
 where the integral represents deadweight loss from foregone trades when prices rise. Both components scale with $M_t$. Without actual market sizes, we cannot value efficiency gains or compare them to consumer harm in dollar terms. Aggregate welfare statements require proper weighting across heterogeneous markets.
