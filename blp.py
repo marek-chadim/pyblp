@@ -1,47 +1,3 @@
-# %% [markdown]
-# # Economics 600a Fall 2025 Prof. P. Haile Homework Assignment
-# 
-# ## 1 Overview
-# You will estimate demand and supply in a stylized model of the market for pay-TV services. You will use a matrix programming language of your choice to create your own fake data set for the industry and do some relatively simple estimation. Then, using the **pyBLP** package of Conlon and Gortmaker, you will estimate the model and perform some merger simulations.
-# 
-# The pyBLP package has excellent documentation and a very helpful tutorial (which covers merger simulation), both easy to find via Google.
-# 
-# Please submit (on canvas) a single PDF document presenting your answers to the questions below, requested results, and well documented code. Write this up nicely, with properly formatted tables and discussion of results. You may work in groups on the coding. However, your write-ups should be your own work, and you must describe all collaboration at the beginning of your submission; this includes any use of AI.
-# 
-# ## 2 Model
-# There are $T$ markets, each with four inside goods $j \in \{1,2,3,4\}$ and an outside option. Goods 1 and 2 are satellite television services (e.g., DirecTV and Dish); goods 3 and 4 are wired television services (e.g., Frontier and Comcast in New Haven). The conditional indirect utility of consumer $i$ for good $j$ in market $t$ is given by
-# 
-# \begin{align*}
-# u_{ijt} &= \beta^{(1)} x_{jt} + \beta_i^{(2)} satellite_{jt} + \beta_i^{(3)} wired_{jt} + \alpha p_{jt} + \xi_{jt} + \epsilon_{ijt} \quad j > 0 \\
-# u_{i0t} &= \epsilon_{i0t},
-# \end{align*}
-# 
-# where $x_{jt}$ is a measure of good $j$'s quality, $p_{jt}$ is its price, $satellite_{jt}$ is an indicator equal to 1 for the two satellite services, and $wired_{jt}$ is an indicator equal to 1 for the two wired services. The remaining notation is as usual in the class notes, including the i.i.d. type-1 extreme value $\epsilon_{ijt}$. Each consumer purchases the good giving them the highest conditional indirect utility.
-# 
-# Goods are produced by single-product firms. Firm $j$'s (log) marginal cost in market $t$ is
-# 
-# \begin{equation*}
-# \ln mc_{jt} = \gamma^{(0)} + w_{jt} \gamma^{(1)} + \omega_{jt}/8,
-# \end{equation*}
-# 
-# where $w_{jt}$ is an observed cost shifter. Firms compete by simultaneously choosing prices in each market under complete information. Firm $j$ has profit
-# 
-# \begin{equation*}
-# \pi_{jt} = \max_{p_{jt}} (p_{jt} - mc_{jt}) s_{jt}(p_t).
-# \end{equation*}
-
-# %% [markdown]
-# ## 3 Generate Fake Data
-# 
-# Generate a data set from the model above. Let
-# 
-# \begin{align*}
-# \beta^{(1)} &= 1, \quad \beta_i^{(k)} \sim \text{iid } N(4,1) \text{ for } k=2,3 \\
-# \alpha &= -2 \\
-# \gamma^{(0)} &= 1/2, \quad \gamma^{(1)} = 1/4.
-# \end{align*}
-
-# %%
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -57,61 +13,37 @@ pd.options.display.precision = 3
 pd.options.display.max_columns = 50
 pyblp.__version__
 
-# %% [markdown]
-# ### 1. 
-# Draw the exogenous product characteristic $x_{jt}$ for $T=600$ geographically defined markets (e.g., cities). Assume each $x_{jt}$ is equal to the absolute value of an iid standard normal draw, as is each $w_{jt}$. Simulate demand and cost unobservables as well, specifying
-# 
-# \begin{equation*}
-# \left(
-# \begin{array}{c}
-# \xi_{jt} \\
-# \omega_{jt}
-# \end{array}
-# \right) \sim N\left( \left(
-# \begin{array}{c}
-# 0 \\
-# 0
-# \end{array}
-# \right), \left(
-# \begin{array}{cc}
-# 1 & 0.25 \\
-# 0.25 & 1
-# \end{array}
-# \right) \right) \quad \text{iid across } j,t.
-# \end{equation*}
-
-# %%
 np.random.seed(1995)
 
 # Model parameters
 T, J = 600, 4
 alpha, beta1 = -2, 1
-beta2, beta3 = 4, 4  
+beta2, beta3 = 4, 4
 sigma_satellite, sigma_wired = 1, 1
 gamma0, gamma1 = 0.5, 0.25
 
 # Product data structure
 data = [
-    {'market_ids': t, 'firm_ids': j+1, 'product_ids': j} 
-    for t in range(T) 
-    for j in range(J)
+{'market_ids': t, 'firm_ids': j+1, 'product_ids': j}
+for t in range(T)
+for j in range(J)
 ]
 product_data = pd.DataFrame(data)
 
 # Exogenous variables: x_jt and w_jt as absolute values of iid standard normal draws
 product_data['x'] = np.abs(
-    np.random.normal(0, 1, len(product_data))
+np.random.normal(0, 1, len(product_data))
 )
 product_data['w'] = np.abs(
-    np.random.normal(0, 1, len(product_data))
+np.random.normal(0, 1, len(product_data))
 )
 
 # Indicators
 product_data['satellite'] = (
-    product_data['firm_ids'].isin([1, 2]).astype(int)
+product_data['firm_ids'].isin([1, 2]).astype(int)
 )
 product_data['wired'] = (
-    product_data['firm_ids'].isin([3, 4]).astype(int)
+product_data['firm_ids'].isin([3, 4]).astype(int)
 )
 
 # Unobservables: ξ_jt and ω_jt with covariance matrix [[1, 0.25], [0.25, 1]]
@@ -132,61 +64,6 @@ sat_count = product_data["satellite"].sum()
 wired_count = product_data["wired"].sum()
 print(f"Satellite products: {sat_count}, Wired products: {wired_count}")
 
-# %% [markdown]
-# ### 2. Solve for the equilibrium prices for each good in each market.
-# 
-# **(a)** Start by writing a procedure to approximate the derivatives of market shares with respect to prices (taking prices, shares, x, and demand parameters as inputs). The key steps are:
-# 
-# (i) For each $jt$, write the choice probability for good $j$, $s_{jt}$, as a weighted average (integral) of the (multinomial logit) choice probabilities conditional on the value of each consumer's random coefficients;
-
-# %% [markdown]
-# The market share for good $j$ in market $t$, $s_{jt}$, is the probability that a consumer chooses good $j$:
-# 
-# $$s_{jt} = \int P(\text{choose } j | \beta_i^{(2)}, \beta_i^{(3)}) f(\beta_i^{(2)}, \beta_i^{(3)}) d\beta_i^{(2)} d\beta_i^{(3)}$$
-# 
-# where $P(\text{choose } j | \beta_i^{(2)}, \beta_i^{(3)})$ is the multinomial logit choice probability conditional on the random coefficients.
-# 
-# Given the random coefficients $\beta_i^{(2)}$ and $\beta_i^{(3)}$ (with means $\beta^{(2)} = 4$, $\beta^{(3)} = 4$ and variances $\sigma_2^2 = 1$, $\sigma_3^2 = 1$), the conditional utility becomes:
-# 
-# $$u_{ijt} = \beta^{(1)} x_{jt} + \beta_i^{(2)} satellite_{jt} + \beta_i^{(3)} wired_{jt} + \alpha p_{jt} + \xi_{jt} + \epsilon_{ijt}$$
-# 
-# Since $\epsilon_{ijt}$ are i.i.d. Type-1 extreme value, the conditional choice probability follows the multinomial logit form:
-# 
-# $$P(\text{choose } j | \beta_i^{(2)}, \beta_i^{(3)}) = \frac{\exp(\delta_{jt} + \mu_{jt}^i)}{\sum_{k=1}^J \exp(\delta_{kt} + \mu_{kt}^i) + 1}$$
-# 
-# where:
-# - $\delta_{jt} = \beta^{(1)} x_{jt} + \alpha p_{jt} + \xi_{jt}$ (mean utility component)
-# - $\mu_{jt}^i = \beta_i^{(2)} satellite_{jt} + \beta_i^{(3)} wired_{jt}$ (random utility component)
-# 
-# **Final Expression:**
-# 
-# $$s_{jt} = \int \frac{\exp(\delta_{jt} + \beta_i^{(2)} satellite_{jt} + \beta_i^{(3)} wired_{jt})}{\sum_{k=1}^J \exp(\delta_{kt} + \beta_i^{(2)} satellite_{kt} + \beta_i^{(3)} wired_{kt}) + 1} \phi(\beta_i^{(2)}, \beta_i^{(3)}) d\beta_i^{(2)} d\beta_i^{(3)}$$
-# 
-# where $\phi(\cdot, \cdot)$ is the bivariate normal density with mean $(\beta^{(2)}, \beta^{(3)}) = (4, 4)$ and covariance matrix $\text{diag}(1, 1)$.
-# 
-# This integral is approximated in the code using Monte Carlo simulation with draws from the normal distribution of $(\beta_i^{(2)}, \beta_i^{(3)})$.
-
-# %% [markdown]
-# (ii) Anticipating differentiation under the integral sign, derive the analytical expression for the derivative of the integrand with respect to each $p_{kt}$.
-# 
-# The integrand is the conditional choice probability $P(\text{choose } j | \beta_i^{(2)}, \beta_i^{(3)})$, which depends on prices through the mean utility component $\delta_{jt} = \beta^{(1)} x_{jt} + \alpha p_{jt} + \xi_{jt}$.
-# 
-# Since $p_{kt}$ appears in $\delta_{kt}$, the derivative with respect to $p_{kt}$ affects the choice probability.
-# 
-# For the multinomial logit model, the derivative of the choice probability with respect to a price is:
-# 
-# $$\frac{\partial P(\text{choose } j | \beta_i^{(2)}, \beta_i^{(3)})}{\partial p_{kt}} = \alpha P(j|\beta_i) \left( I_{jk} - P(k|\beta_i) \right)$$
-# 
-# where $I_{jk}$ is the indicator function equal to 1 if $j = k$.
-# 
-# Therefore, the derivative of the integrand (conditional choice probability) with respect to $p_{kt}$ is:
-# 
-# $$\frac{\partial}{\partial p_{kt}} \left[ \frac{\exp(\delta_{jt} + \mu_{jt}^i)}{\sum_{m=1}^J \exp(\delta_{mt} + \mu_{mt}^i) + 1} \right] = \alpha \cdot \frac{\exp(\delta_{jt} + \mu_{jt}^i)}{\sum_{m=1}^J \exp(\delta_{mt} + \mu_{mt}^i) + 1} \left( I_{jk} - \frac{\exp(\delta_{kt} + \mu_{kt}^i)}{\sum_{m=1}^J \exp(\delta_{mt} + \mu_{mt}^i) + 1} \right)$$
-
-# %% [markdown]
-# 3. Use the expression you obtained in (2) and simulation draws of the random coefficients to approximate the integral that corresponds to $\partial s_{jt}/\partial p_{kt}$ for each $j$ and $k$ (i.e., replace the integral with the mean over the values at each simulation draw). Recall the advice in the lecture regarding "jittering."
-
-# %%
 def market_shares_and_derivatives(prices, market_data, nu_draws):
     """
     Compute shares, derivatives, and inside_shares_draws efficiently in one pass.
@@ -197,74 +74,53 @@ def market_shares_and_derivatives(prices, market_data, nu_draws):
     xi = market_data['xi'].values
     sat = market_data['satellite'].values
     wired = market_data['wired'].values
-    
+
     # Compute utilities once
     utilities = (
-        beta1 * x + xi + 
-        nu_draws[:, 0:1] * sat + 
-        nu_draws[:, 1:2] * wired + 
+        beta1 * x + xi +
+        nu_draws[:, 0:1] * sat +
+        nu_draws[:, 1:2] * wired +
         alpha * prices
     )
     utilities = np.column_stack([utilities, np.zeros(nu_draws.shape[0])])
     exp_u = np.exp(utilities - np.max(utilities, axis=1, keepdims=True))
     choice_probs = exp_u / exp_u.sum(axis=1, keepdims=True)
     inside_shares_draws = choice_probs[:, :J]
-    
+
     # Shares: average over draws
     shares = np.mean(inside_shares_draws, axis=0)
-    
+
     # Derivatives: compute analytically from choice probabilities
     derivatives = np.zeros((J, J))
     for j in range(J):
         for k in range(J):
             indicator = float(j == k)
             deriv_draws = (
-                alpha * inside_shares_draws[:, j] * 
+                alpha * inside_shares_draws[:, j] *
                 (indicator - inside_shares_draws[:, k])
             )
             derivatives[j, k] = np.mean(deriv_draws)
-    
+
     return shares, derivatives, inside_shares_draws
 
-# %% [markdown]
-# The derivative $\partial s_{jt}/\partial p_{kt}$ is approximated using Monte Carlo simulation. For each simulation draw $r = 1, \dots, R$ of the random coefficients $(\beta_i^{(2)}, \beta_i^{(3)})$, compute the conditional choice probability $P(\text{choose } j | \beta_i^{(2)}, \beta_i^{(3)})$ and its derivative with respect to prices.
-# 
-# The derivative of the conditional choice probability follows from the multinomial logit formula:
-# 
-# $$\frac{\partial P(\text{choose } j | \beta_i^{(2)}, \beta_i^{(3)})}{\partial p_{kt}} = \alpha P(j|\beta_i) \left( \delta_{jk} - P(k|\beta_i) \right)$$
-# 
-# where $\delta_{jk} = 1$ if $j = k` and 0 otherwise.
-# 
-# Then, the market share derivative is approximated as:
-# 
-# $$\frac{\partial s_{jt}}{\partial p_{kt}} \approx \frac{1}{R} \sum_{r=1}^R \frac{\partial P(\text{choose } j | \beta_i^{(2,r)}, \beta_i^{(3,r)})}{\partial p_{kt}}$$
-
-# %% [markdown]
-# Regarding "jittering": When solving for equilibrium prices iteratively, redrawing simulation draws in each iteration introduces random noise that can prevent convergence. To avoid this, pre-draw a fixed set of simulation draws for each market and reuse them throughout the solution process.
-
-# %%
 # Pre-draw simulation draws (to avoid jittering)
-np.random.seed(1995) 
+np.random.seed(1995)
 n_draws = 10000
 all_nu_draws = [
     np.random.multivariate_normal(
-        [beta2, beta3], 
-        np.diag([sigma_satellite, sigma_wired]), 
+        [beta2, beta3],
+        np.diag([sigma_satellite, sigma_wired]),
         size=n_draws
-    ) 
+    )
     for _ in range(T)
 ]
 
-# %% [markdown]
-# (iv) Experiment to see how many simulation draws you need to get precise approximations and check this again at the equilibrium shares and prices you obtained below.
-
-# %%
 def test_convergence(prices, market_data, nu_draws_full, draw_counts, n_reps=100):
     """Test derivative stability across different numbers of simulation draws."""
-    np.random.seed(1995) 
+    np.random.seed(1995)
     stds = []
     n_available = len(nu_draws_full)
-    
+
     for n_draws in draw_counts:
         deriv_list = []
         for rep in range(n_reps):
@@ -289,35 +145,18 @@ draw_counts = [50, 100, 200, 500, 1000, 2000, 5000]
 stds = test_convergence(prices_init, market_0, all_nu_draws[0], draw_counts)
 stds
 
-# %% [markdown]
-# (b) The FOC for firm $j$'s profit maximization problem in market $t$ is
-# 
-# \begin{align}
-# (p_{jt} - mc_{jt}) \frac{\partial s_{jt}}{\partial p_{jt}} + s_{jt} &= 0 \notag \\
-# \implies p_{jt} - mc_{jt} &= -\left( \frac{\partial s_{jt}}{\partial p_{jt}} \right)^{-1} s_{jt}
-# \end{align}
-
-# %%
-
 print(f"MC range: {product_data['mc'].min():.3f} to {product_data['mc'].max():.3f}")
 print(f"MC mean: {product_data['mc'].mean():.3f}, median: {product_data['mc'].median():.3f}")
 print("FOC: (p_jt - mc_jt) * ∂s_jt/∂p_jt + s_jt = 0")
 print("Rearranged: p_jt - mc_jt = - (∂s_jt/∂p_jt)⁻¹ * s_jt")
 
-# %%
 plt.hist(product_data['mc'], bins=50);
 plt.legend(["Marginal Costs"]);
 
-# %% [markdown]
-# (c) Substituting in your approximation of each $\partial s_{jt}/\partial p_{jt}$, solve the system of equations above ($J$ equations per market) for the equilibrium prices in each market.
-# 
-# **i.** First do this using Matlab's "fsolve" operator. Check the exit flag from fsolve to be sure whether you found a solution for each market.
-
-# %%
 def solve_prices_direct(market_data, mc_market, nu_draws):
     """Solve for equilibrium prices using direct nonlinear solver with robust matrix inversion"""
     J = len(market_data)
-    
+
     def foc_residual(prices):
         """FOC residuals: p - mc + (∂s/∂p)^{-1} s = 0"""
         # Compute shares and derivatives at current prices
@@ -371,17 +210,13 @@ price_stats_text = (
 )
 print(price_stats_text)
 
-# %% [markdown]
-# ii. Do this again using the algorithm of Morrow and Skerlos (2011), discussed in section 3.6 of Conlon and Gortmaker (2019) (and in the pyBLP "problem simulation tutorial"). Use the numerical integration approach you used in step (a) to approximate the terms defined in equation (25) of Conlon and Gortmaker. If you get different results using this method, resolve this discrepancy either by correcting your code or explaining why your preferred method is the one to be trusted.
-
-# %%
 def solve_prices_morrow_skerlos(market_data, mc_market, nu_draws, max_iter=100, tol=1e-6):
     """Morrow-Skerlos algorithm"""
     prices = mc_market.copy()
     for iteration in range(max_iter):
         # Efficiently compute shares, derivatives, and inside_shares_draws in one pass
         shares, derivatives, inside_shares_draws = market_shares_and_derivatives(prices, market_data, nu_draws)
-        
+
         Lambda = np.diag(alpha * shares)
         Gamma = alpha * (inside_shares_draws.T @ inside_shares_draws) / nu_draws.shape[0]
         diff = prices - mc_market
@@ -420,56 +255,49 @@ if len(equilibrium_prices_direct) == T:
     print(f"Max price difference between methods: {price_diff.max():.2e}")
     print(f"Mean price difference: {price_diff.mean():.2e}")
 else:
-    print("Direct method failed for some markets, skipsigmang comparison.")
+    print("Direct method failed for some markets, skipping comparison.")
     print("Preferred method: Morrow-Skerlos, as it is more numerically stable.")
 
 # Use Morrow-Skerlos prices
 product_data['prices'] = equilibrium_prices_ms.flatten()
 
+# Compare derivative convergence at initial vs equilibrium prices
+market_0 = product_data[product_data['market_ids'] == 0]
+prices_equilibrium = market_0['prices'].values
 
-# %%
-    # Compare derivative convergence at initial vs equilibrium prices
-    market_0 = product_data[product_data['market_ids'] == 0]
-    prices_equilibrium = market_0['prices'].values
+draw_counts = [50, 100, 200, 500, 1000, 2000, 5000]
+# Reuse previously calculated initial_stds from test_convergence
+initial_stds = stds  # Already calculated earlier at initial prices
 
-    draw_counts = [50, 100, 200, 500, 1000, 2000, 5000]
-    # Reuse previously calculated initial_stds from test_convergence
-    initial_stds = stds  # Already calculated earlier at initial prices
-    
-    # Only compute equilibrium stds
-    np.random.seed(1995)
-    n_available = len(all_nu_draws[0])
-    n_reps = 100
-    eq_stds = []
-    for n_draws in draw_counts:
-        deriv_list = []
-        for _ in range(n_reps):
-            indices = np.random.choice(n_available, size=n_draws, replace=False)
-            nu_draws = all_nu_draws[0][indices]
-            _, derivatives, _ = market_shares_and_derivatives(
-                prices_equilibrium, market_0, nu_draws
-            )
-            deriv_list.append(derivatives)
-        eq_stds.append(np.std(deriv_list, axis=0).mean())
-    eq_stds = np.array(eq_stds)
+# Only compute equilibrium stds
+np.random.seed(1995)
+n_available = len(all_nu_draws[0])
+n_reps = 100
+eq_stds = []
+for n_draws in draw_counts:
+    deriv_list = []
+    for _ in range(n_reps):
+        indices = np.random.choice(n_available, size=n_draws, replace=False)
+        nu_draws = all_nu_draws[0][indices]
+        _, derivatives, _ = market_shares_and_derivatives(
+            prices_equilibrium, market_0, nu_draws
+        )
+        deriv_list.append(derivatives)
+    eq_stds.append(np.std(deriv_list, axis=0).mean())
+eq_stds = np.array(eq_stds)
 
-    print("Comparing derivative approximation convergence:")
-    print("Draws\t| Initial Std Dev\t| Equilibrium Std Dev\t| Ratio (Eq/Init)")
-    print("-" * 75)
+print("Comparing derivative approximation convergence:")
+print("Draws\t| Initial Std Dev\t| Equilibrium Std Dev\t| Ratio (Eq/Init)")
+print("-" * 75)
 
-    for i, n_draws in enumerate(draw_counts):
-        ratio = eq_stds[i] / initial_stds[i] if initial_stds[i] > 0 else float('inf')
-        print(f"{n_draws:6d}\t| {initial_stds[i]:.2e}\t\t| {eq_stds[i]:.2e}\t\t| {ratio:.2f}")
+for i, n_draws in enumerate(draw_counts):
+    ratio = eq_stds[i] / initial_stds[i] if initial_stds[i] > 0 else float('inf')
+    print(f"{n_draws:6d}\t| {initial_stds[i]:.2e}\t\t| {eq_stds[i]:.2e}\t\t| {ratio:.2f}")
 
-    # Summary statistics
-    valid_ratios = eq_stds / initial_stds
-    avg_ratio = np.mean(valid_ratios)
+# Summary statistics
+valid_ratios = eq_stds / initial_stds
+avg_ratio = np.mean(valid_ratios)
 
-# %% [markdown]
-# ### 3. 
-# Calculate "observed" market shares for your fake data set using your parameters, your draws of $x$, $w$, $\xi$, $\omega$, and your equilibrium prices.
-
-# %%
 observed_shares = []
 for t in range(T):
     market_data = product_data[product_data['market_ids'] == t]
@@ -498,12 +326,6 @@ wired_shares = product_data[product_data['wired'] == 1]['shares'].mean()
 print(f"Average satellite product share: {satellite_shares:.3f}")
 print(f"Average wired product share: {wired_shares:.3f}")
 
-# %% [markdown]
-# ### 4. 
-# 
-# Below you'll be using $x$ and $w$ as instruments in the demand estimation. Check whether these appear to be good instruments in your fake data using some regressions of prices and market shares on the exogenous variables (or some function of them; see the related discussion in the coding tips). If you believe the instruments are not providing enough variation, modify the parameter choices above until you are satisfied. Report your final choice of parameters and the results you rely on to conclude that the instruments seem good enough.
-
-# %%
 # Create quadratic and interaction columns first
 product_data['x**2'] = product_data['x'] ** 2
 product_data['w**2'] = product_data['w'] ** 2
@@ -511,27 +333,27 @@ product_data['x*w'] = product_data['x'] * product_data['w']
 
 # sum over competing goods in market t
 product_data['sum_x_competitors'] = (
-    product_data.groupby('market_ids')['x'].transform('sum') - 
+    product_data.groupby('market_ids')['x'].transform('sum') -
     product_data['x']
 )
 product_data['sum_w_competitors'] = (
-    product_data.groupby('market_ids')['w'].transform('sum') - 
+    product_data.groupby('market_ids')['w'].transform('sum') -
     product_data['w']
 )
 
 # index of the other good in the same nest
 product_data['x_other_in_nest'] = (
-    product_data.groupby(['market_ids', 'satellite'])['x'].transform('sum') - 
+    product_data.groupby(['market_ids', 'satellite'])['x'].transform('sum') -
     product_data['x']
 )
 product_data['w_other_in_nest'] = (
-    product_data.groupby(['market_ids', 'satellite'])['w'].transform('sum') - 
+    product_data.groupby(['market_ids', 'satellite'])['w'].transform('sum') -
     product_data['w']
 )
 
 # Use satellite and wired dummies instead of constant
 Z = product_data[[
-    'satellite', 'wired', 'x', 'w', 'x**2', 'w**2', 'x*w', 
+    'satellite', 'wired', 'x', 'w', 'x**2', 'w**2', 'x*w',
     'sum_x_competitors', 'sum_w_competitors', 'x_other_in_nest', 'w_other_in_nest'
 ]]
 
@@ -551,8 +373,8 @@ omega_model = sm.OLS(product_data['omega'], Z).fit()
 print("="*75)
 print("INSTRUMENT VALIDITY TESTS")
 print("="*75)
-excluded_vars = ['w', 'x**2', 'w**2', 'x*w', 
-                 'sum_x_competitors', 'sum_w_competitors', 
+excluded_vars = ['w', 'x**2', 'w**2', 'x*w',
+                 'sum_x_competitors', 'sum_w_competitors',
                  'x_other_in_nest', 'w_other_in_nest']
 
 # Create hypothesis string using actual variable names
@@ -600,7 +422,7 @@ print(f"   → Excluded instruments are {'exogenous' if omega_f_test.pvalue >= 0
 
 # Assess instrument validity
 weak_instruments = (
-    (price_model.f_pvalue >= 0.01 and share_model.f_pvalue >= 0.01) or 
+    (price_model.f_pvalue >= 0.01 and share_model.f_pvalue >= 0.01) or
     (price_model.rsquared < 0.05 and share_model.rsquared < 0.05)
 )
 excluded_instruments = (
@@ -617,27 +439,9 @@ else:
     print(f"Supply: γ^(0) = {gamma0}, γ^(1) = {gamma1}")
     print("These parameters generate data with valid instruments and are retained as final.")
 
-# %%
 product_data.to_csv('blp.csv', index=False)
 print(product_data.head(8))
 
-# %% [markdown]
-# ## 4 Estimate Some Mis-specified Models
-
-# %% [markdown]
-# ### 5. Estimate the plain multinomial logit model of demand by OLS (ignoring the endogeneity of prices).
-# 
-# For the plain multinomial logit model, the utility is:
-# 
-# $$u_{ijt} = \beta^{(1)} x_{jt} + \beta^{(2)} satellite_{jt} + \beta^{(3)} wired_{jt} + \alpha p_{jt} + \xi_{jt} + \epsilon_{ijt}$$
-# 
-# This implies the log-odds ratio:
-# 
-# $$\ln\left(\frac{s_{jt}}{s_{0t}}\right) = \delta_{jt} = \beta^{(1)} x_{jt} + \beta^{(2)} satellite_{jt} + \beta^{(3)} wired_{jt} + \alpha p_{jt} + \xi_{jt}$$
-# 
-# We can estimate this by OLS, regressing the logit-transformed shares on the observed product characteristics.
-
-# %%
 # Compute outside shares for each market
 product_data['outside_share'] = 1 - product_data.groupby('market_ids')['shares'].transform('sum')
 
@@ -671,33 +475,22 @@ param_names = ['prices', 'x', 'satellite', 'wired']
 for i, param in enumerate(param_names):
     print(f"{param:12s}: {beta_hat[i]:8.3f} (SE: {se_ols[i]:.3f}, t: {t_stats[i]:6.2f}, p: {p_values[i]:.3f})")
 
-# %%
 product_data['demand_instruments0'] = product_data['prices']
 ols_problem = pyblp.Problem(pyblp.Formulation('0 + prices + x + satellite + wired '), product_data)
 ols_problem
 
-# %%
 ols_results = ols_problem.solve(method='1s')
 ols_results
 
-# %%
 pd.DataFrame(index=ols_results.beta_labels, data={
     ("Estimates", "Manual OLS"): beta_hat,
     ("Estimates", "PyBLP"): ols_results.beta.flat,
     ("SEs", "Manual OLS"): se_ols,
-    ("SEs", "PyBLP"): ols_results.beta_se.flat,
+    ("SEs", "PyBLP"): ols_results.beta_se.flat
 })
 
-# %% [markdown]
-# ### 6. 
-# Re-estimate the multinomial logit model of demand by two-stage
-# least squares, instrumenting for prices with the exogenous demand shifters $%
-# x $ and excluded cost shifters w. Discuss how the results differ from those
-# obtained by OLS.
-
-# %%
-# First stage: 
-Z = product_data[['satellite', 'wired', 'x', 'w', 'x**2', 'w**2', 'x*w', 'sum_x_competitors', 'sum_w_competitors']].values  
+# First stage:
+Z = product_data[['satellite', 'wired', 'x', 'w', 'x**2', 'w**2', 'x*w', 'sum_x_competitors', 'sum_w_competitors']].values
 
 # First stage OLS:
 sigma_hat = np.linalg.inv(Z.T @ Z) @ Z.T @ product_data['prices'].values
@@ -761,7 +554,7 @@ XPZ = X.T @ P_Z
 bread = np.linalg.inv(XPZ @ X)
 meat = XPZ @ Omega @ P_Z @ X
 cov_matrix_iv = bread @ meat @ bread
-se_iv = np.sqrt(np.diag(cov_matrix_iv)) 
+se_iv = np.sqrt(np.diag(cov_matrix_iv))
 t_stats_iv = beta_hat_iv / se_iv
 p_values_iv = 2 * (1 - stats.norm.cdf(np.abs(t_stats_iv)))
 
@@ -772,7 +565,6 @@ param_names = ['prices', 'x', 'satellite', 'wired']
 for i, param in enumerate(param_names):
     print(f"{param:12s}: {beta_hat_iv[i]:8.3f} (SE: {se_iv[i]:.3f}, t: {t_stats_iv[i]:6.2f}, p: {p_values_iv[i]:.3f})")
 
-# %%
 # Add demand instruments for PyBLP
 product_data['demand_instruments0'] = product_data['w']
 product_data['demand_instruments1'] = product_data['x**2']
@@ -784,11 +576,9 @@ product_data['demand_instruments5'] = product_data['sum_w_competitors']
 iv_problem = pyblp.Problem(pyblp.Formulation('0 + prices + x + satellite + wired'), product_data)
 iv_problem
 
-# %%
 iv_results = iv_problem.solve(method='1s')
 iv_results
 
-# %%
 pd.DataFrame(index=iv_results.beta_labels, data={
     ("Estimates", "Manual IV"): beta_hat_iv,
     ("Estimates", "PyBLP IV"): iv_results.beta.flat,
@@ -796,17 +586,6 @@ pd.DataFrame(index=iv_results.beta_labels, data={
     ("SEs", "PyBLP IV"): iv_results.beta_se.flat
 })
 
-# %% [markdown]
-# ### 7. Nested Logit Model Estimation
-# 
-# Now estimate a nested logit model by two-stage least squares, treating "satellite" and "wired" as the two nests for the inside goods. You will probably want to review the discussion of the nested logit in Berry (1994). Note that Berry focuses on the special case in which all the "nesting parameters" are the same; you should allow a different nesting parameter for each nest.
-# 
-# 
-# 
-# In Berry’s notation, this means letting the parameter become g(j) , where g (j) indicates the group (satellite
-# or wired) to which each inside good j belongs.
-
-# %%
 # Compute ln_within_share
 product_data["group_share"] = product_data.groupby(["market_ids", "satellite"])["shares"].transform("sum")
 product_data["ln_within_share"] = np.log(product_data["shares"] / product_data["group_share"])
@@ -876,23 +655,19 @@ param_names = ["prices", "x", "satellite", "wired", "ln_within_share_sat", "ln_w
 for i, param in enumerate(param_names):
     print(f"{param:20s}: {beta_hat_iv_nested[i]:8.3f} (SE: {se_iv_nested[i]:.3f}, t: {t_stats_iv[i]:6.2f}, p: {p_values_iv[i]:.3f})")
 
-# %%
 # Prepare data for nested logit
 # Note: nesting_ids needed for PyBLP, but use satellite/wired for groupby where possible
 product_data['nesting_ids'] = product_data['satellite'].map({1: 'satellite', 0: 'wired'})
 product_data['demand_instruments6'] = product_data['x_other_in_nest']
 product_data['demand_instruments7'] = product_data['w_other_in_nest']
 
-# %%
 # Nested logit formulation
 nl_problem = pyblp.Problem(pyblp.Formulation('0 + prices + x + satellite + wired'), product_data)
 
-# %%
 rho_initial = [0.7, 0.7]  # Initial values for rho_sat and rho_wired
 nl_results = nl_problem.solve(rho=rho_initial, method='1s')
 nl_results
 
-# %%
 # Compare manual nested logit estimates with PyBLP nested logit estimates for beta
 nested_beta_comparison = pd.DataFrame(index=nl_results.beta_labels, data={
     ("Estimates", "Manual Nested"): beta_hat_iv_nested[:4],  # prices, x, satellite, wired
@@ -915,114 +690,106 @@ nested_rho_comparison = pd.DataFrame(index=nl_results.rho_labels, data={
 print("\nRho Comparison for Nested Logit:")
 print(nested_rho_comparison)
 
-# %% [markdown]
-# ### 8.
-# Using the nested logit results, provide a table comparing the estimated own-price elasticities to the true own-price elasticities. The procedure you developed above for approximating derivatives cannot be used for your estimates
-# based
-# on the nested logit model. But because we have analytic expressions for market shares in the nested logit model,
-# you could either differentiate these or use “finite difference” approximation of derivatives.
-
-# %%
 # Extract nested logit parameters
 alpha_nl, beta_x_nl, rho_sat_nl, rho_wired_nl = beta_hat_iv_nested[[0, 1, 4, 5]]
 
 def compute_nested_logit_elasticities_analytic(market_df, alpha, beta_x, rho_sat, rho_wired):
     """Compute elasticities using pyBLP's exact Jacobian formula for nested logit.
-    
+
     Based on pyBLP's compute_capital_lamda_gamma:
-    - Lambda_jj = alpha * s_j / (1 - rho_j)
-    - Gamma_jk = alpha * s_j * s_k + rho/(1-rho) * membership_jk * alpha * s_j|g * s_k
-    - Jacobian[j,k] = Lambda_jj - Gamma_jk (if j==k), -Gamma_jk (if j!=k)
-    - Elasticity[j,k] = Jacobian[j,k] * price[k] / share[j]
-    
-    This matches pyBLP to within ~1% numerical precision.
-    """
+        - Lambda_jj = alpha * s_j / (1 - rho_j)
+        - Gamma_jk = alpha * s_j * s_k + rho/(1-rho) * membership_jk * alpha * s_j|g * s_k
+        - Jacobian[j,k] = Lambda_jj - Gamma_jk (if j==k), -Gamma_jk (if j!=k)
+        - Elasticity[j,k] = Jacobian[j,k] * price[k] / share[j]
+
+        This matches pyBLP to within ~1% numerical precision.
+        """
     J = len(market_df)
     prices = market_df['prices'].values
     shares = market_df['shares'].values
     satellite, wired = market_df['satellite'].values, market_df['wired'].values
-    
+
     # Compute within-nest shares (conditionals in pyBLP terminology)
     s_group = market_df.groupby('satellite')['shares'].transform('sum').values
     conditionals = shares / s_group
-    
+
     # Nesting parameter for each product
     rho = np.where(satellite == 1, rho_sat, rho_wired)
-    
+
     # Compute full elasticity matrix using pyBLP's formula
     elasticities = np.zeros((J, J))
     for j in range(J):
         # Lambda diagonal element
         lambda_jj = alpha * shares[j] / (1 - rho[j])
-        
+
         for k in range(J):
             # Gamma matrix element
             same_nest = (satellite[j] == satellite[k]) and (wired[j] == wired[k])
             gamma_jk = alpha * shares[j] * shares[k]
             if same_nest:
                 gamma_jk += (rho[j] / (1 - rho[j])) * alpha * conditionals[j] * shares[k]
-            
+
             # Jacobian = Lambda - Gamma (on diagonal), -Gamma (off-diagonal)
             if j == k:
                 jac_jk = lambda_jj - gamma_jk
             else:
                 jac_jk = -gamma_jk
-            
+
             # Elasticity = Jacobian * price / share
             elasticities[j, k] = jac_jk * prices[k] / shares[j]
-    
+
     return elasticities
 
 def compute_rc_elasticities_observed_shares(market_df, nu_draws, alpha, beta_x, beta_sat, beta_wired, sigma_sat, sigma_wired):
     """Compute elasticities from RC logit using OBSERVED shares (not recomputed from xi).
-    
+
     This matches pyBLP's approach:
-    1. Start with observed shares
-    2. Back out mean utilities (delta) that rationalize these shares via contraction mapping
-    3. Compute individual choice probabilities using delta + random coefficients
-    4. Compute elasticities via analytical derivatives
-    
-    Key difference from old method:
-    - OLD: Uses TRUE xi to compute shares, then elasticities (wrong for comparison!)
-    - NEW: Uses OBSERVED shares, backs out delta, then computes elasticities (correct!)
-    """
+        1. Start with observed shares
+        2. Back out mean utilities (delta) that rationalize these shares via contraction mapping
+        3. Compute individual choice probabilities using delta + random coefficients
+        4. Compute elasticities via analytical derivatives
+
+        Key difference from old method:
+            - OLD: Uses TRUE xi to compute shares, then elasticities (wrong for comparison!)
+            - NEW: Uses OBSERVED shares, backs out delta, then computes elasticities (correct!)
+        """
     J = len(market_df)
     prices = market_df['prices'].values
     observed_shares = market_df['shares'].values
     x, satellite, wired = market_df['x'].values, market_df['satellite'].values, market_df['wired'].values
-    
+
     # Compute random coefficient deviations (the part that varies across individuals)
     # Delta will absorb everything else: beta_x*x + beta_sat*satellite + beta_wired*wired + alpha*prices + xi
     rc_deviation = sigma_sat*nu_draws[:,0:1]*satellite + sigma_wired*nu_draws[:,1:2]*wired
-    
+
     # Back out mean utilities (delta) via contraction mapping
     # Goal: Find delta such that observed_shares = E[exp(delta + rc_deviation) / (1 + sum exp(delta + rc_deviation))]
     delta = np.log(observed_shares)  # Initial guess
-    
+
     for iteration in range(1000):
         # Compute individual choice probabilities
         utilities = delta[np.newaxis, :] + rc_deviation  # Shape: (n_draws, J)
         exp_utils = np.exp(utilities)
         denom = 1 + exp_utils.sum(axis=1, keepdims=True)
         choice_probs = exp_utils / denom  # Shape: (n_draws, J)
-        
+
         # Predicted shares
         predicted_shares = choice_probs.mean(axis=0)
-        
+
         # Contraction update: delta_new = delta + log(s_obs) - log(s_pred)
         delta_new = delta + np.log(observed_shares) - np.log(predicted_shares)
-        
+
         # Check convergence
         if np.max(np.abs(delta_new - delta)) < 1e-14:
             delta = delta_new
             break
         delta = delta_new
-    
+
     # Compute final choice probabilities with converged delta
     utilities = delta[np.newaxis, :] + rc_deviation
     exp_utils = np.exp(utilities)
     choice_probs = exp_utils / (1 + exp_utils.sum(axis=1, keepdims=True))
-    
+
     # Compute elasticities using analytical derivatives
     elasticities = np.zeros((J, J))
     for j in range(J):
@@ -1033,17 +800,16 @@ def compute_rc_elasticities_observed_shares(market_df, nu_draws, alpha, beta_x, 
             else:
                 # Cross-price: -E[s_ij * s_ik]
                 deriv = -alpha * np.mean(choice_probs[:, j] * choice_probs[:, k])
-            
+
             if observed_shares[j] > 1e-10:
                 elasticities[j, k] = (prices[k] / observed_shares[j]) * deriv
-    
+
     return elasticities
 
 # ============================================================================
 # Compute elasticities for Q8 comparison
 # ============================================================================
 
-# Compute Nested Logit elasticities (analytical derivatives)
 # Compute Nested Logit elasticities (analytical derivatives)
 print("Computing Nested Logit Elasticities (Analytical Derivatives)...")
 elasticity_matrices_analytic = [compute_nested_logit_elasticities_analytic(
@@ -1077,18 +843,11 @@ print("="*70 + "\n")
 product_data['true_elasticity_rc'] = [true_elasticity_matrices[t][j, j] for t in range(T) for j in range(J)]
 product_data['estimated_elasticity_nl'] = [elasticity_matrices_analytic[t][j, j] for t in range(T) for j in range(J)]
 
-
-# %%
 elasticities_nl = nl_results.compute_elasticities()
 avg_elasticities_nl = elasticities_nl.reshape((T, J, J)).mean(axis=0)
 own_elasticities_nl = np.diag(avg_elasticities_nl)
 own_elasticities_nl
 
-# %% [markdown]
-# Provide two additional tables showing the true matrix of diversion ratios and the diversion
-# ratios implied by your estimates.
-
-# %%
 # ============================================================================
 # DIVERSION RATIOS
 # ============================================================================
@@ -1101,38 +860,38 @@ print("Computing Diversion Ratios...")
 def compute_diversion_ratios_pyblp(elasticity_matrices, product_data, T, J):
     """
     Compute diversion ratios using pyBLP's derivative-based method.
-    
+
     This method:
-    1. Converts elasticities to Jacobian (derivatives)
-    2. Replaces diagonal with outside option derivative using adding-up constraint
-    3. Computes diversion ratios as D_jk = -(∂s_k/∂p_j) / (∂s_j/∂p_j)
-    
-    Works for any model (RC, NL, etc.) - just supply the elasticity matrices.
-    """
+        1. Converts elasticities to Jacobian (derivatives)
+        2. Replaces diagonal with outside option derivative using adding-up constraint
+        3. Computes diversion ratios as D_jk = -(∂s_k/∂p_j) / (∂s_j/∂p_j)
+
+        Works for any model (RC, NL, etc.) - just supply the elasticity matrices.
+        """
     diversion_matrices = []
-    
+
     for t in range(T):
         elast_matrix = elasticity_matrices[t]
         market_data_t = product_data[product_data['market_ids'] == t]
         shares = market_data_t['shares'].values
         prices = market_data_t['prices'].values
-        
+
         # Convert elasticities to Jacobian (derivatives): ∂s_j/∂p_k = (s_j/p_k) * ε_jk
         jacobian = np.zeros((J, J))
         for j in range(J):
             for k in range(J):
                 jacobian[j, k] = (shares[j] / prices[k]) * elast_matrix[j, k]
-        
+
         # PyBLP's method: Replace diagonal with outside option derivative
         # ∂s_0/∂p_j = -Σ_k ∂s_k/∂p_j (by adding-up constraint)
         jacobian_diag = np.diag(jacobian).copy()
         np.fill_diagonal(jacobian, -jacobian.sum(axis=1))
-        
+
         # Compute diversion ratios: D_jk = -Jacobian[j,k] / Jacobian[j,j]
         diversion = -jacobian / jacobian_diag[:, None]
-        
+
         diversion_matrices.append(diversion)
-    
+
     return diversion_matrices
 
 # --- TRUE DIVERSION RATIOS (from RC model with true parameters on OBSERVED shares) ---
@@ -1176,24 +935,8 @@ print("Off-diagonal: share of j's lost customers who switch to k")
 print("Diagonal: share of j's lost customers who leave the market (outside)")
 print("=" * 70)
 
-# %% [markdown]
-# ## 5 Estimate the Correctly Specified Model
-
-# %% [markdown]
-# Use the pyBLP software to estimate the correctly specified model. Allow pyBLP to construct
-# approximations to the optimal instruments, using the exogenous demand shifters and exogenous
-# cost shifters. For your own benefit, you may want to see what happens without the approximation of the optimal instruments.
-
-# %%
 product_data.drop(columns=['nesting_ids'], inplace=True)
 
-# %% [markdown]
-# ### 9. 
-# Report a table with the estimates of the demand parameters and standard errors. Do
-# this twice: once when you estimate demand alone, then again when you estimate jointly
-# with supply.
-
-# %%
 X1_formulation = pyblp.Formulation('0 + prices + x + satellite + wired')
 X2_formulation = pyblp.Formulation('0 + satellite + wired')
 product_formulations1 = (X1_formulation, X2_formulation)
@@ -1205,7 +948,7 @@ product_data['demand_instruments4'] = product_data['sum_x_competitors']
 product_data['demand_instruments5'] = product_data['sum_w_competitors']
 product_data['demand_instruments6'] = product_data['x_other_in_nest']
 product_data['demand_instruments7'] = product_data['w_other_in_nest']
-integration =  pyblp.Integration('product', 10)
+integration = pyblp.Integration('product', 10)
 problem1 = pyblp.Problem(product_formulations1, product_data, integration=integration)
 results1 = problem1.solve(sigma=np.eye(2), initial_update=True)
 optimal_iv1 = results1.compute_optimal_instruments(seed=1995)
@@ -1213,7 +956,6 @@ optimal_problem1 = optimal_iv1.to_problem()
 optimal_iv_results1 = optimal_problem1.solve(sigma=np.eye(2), initial_update=True)
 optimal_iv_results1
 
-# %%
 X3_formulation = pyblp.Formulation('1 + w')
 product_formulations2 = (X1_formulation, X2_formulation, X3_formulation)
 columns_to_drop = [col for col in product_data.columns if 'instruments' in col]
@@ -1224,25 +966,21 @@ product_data['demand_instruments2'] = product_data['w']
 problem2 = pyblp.Problem(product_formulations2, product_data, costs_type='log', integration=integration)
 results2 = problem2.solve(sigma=np.eye(2), beta=optimal_iv_results1.beta, initial_update=True)
 
-# %%
 # Re-estimate with optimal instruments
-columns_to_drop = [col for col in product_data.columns 
+columns_to_drop = [col for col in product_data.columns
                    if 'instruments' in col]
 product_data = product_data.drop(columns=columns_to_drop)
 optimal_iv2 = results2.compute_optimal_instruments(seed=1995)
 for i in range(optimal_iv2.demand_instruments.shape[1]-3):
     product_data[f'demand_instruments{i}'] = optimal_iv2.demand_instruments[:, i]
-problem3 = pyblp.Problem(product_formulations2, product_data, 
+problem3 = pyblp.Problem(product_formulations2, product_data,
                          costs_type='log', integration=integration)
 optimal_iv_results2 = problem3.solve(sigma=np.eye(2), beta=results2.beta, initial_update=True)
 
-# %%
 optimal_iv_results1
 
-# %%
 optimal_iv_results2
 
-# %%
 # Compare individual and joint PyBLP estimates for beta
 pyblp_beta_comparison = pd.DataFrame(index=optimal_iv_results1.beta_labels, data={
     ("Estimates", "PyBLP D"): optimal_iv_results1.beta.flat,  # prices, x, satellite, wired
@@ -1270,14 +1008,6 @@ pyblp_gamma_comparison = pd.DataFrame(index=optimal_iv_results2.gamma_labels, da
 })
 print(pyblp_gamma_comparison)
 
-# %% [markdown]
-# ### 10. 
-# Using your preferred estimates from the prior step (explain your preference), provide
-# a table comparing the estimated own-price elasticities to the true own-price elasticities.
-# Provide two additional tables showing the true matrix of diversion ratios and the diversion
-# ratios implied by your estimates.
-
-# %%
 # ============================================================================
 # Q9: Compare TRUE vs ESTIMATED Random Coefficients Elasticities/Diversions
 # ============================================================================
@@ -1328,7 +1058,6 @@ print("=" * 95)
 print(elasticity_comparison_rc.to_string(index=False, float_format=lambda x: f'{x:9.4f}'))
 print(f"\nMean Absolute % Error (Demand-only): {elasticity_comparison_rc['% Error (D-only)'].mean():.2f}%")
 print(f"Mean Absolute % Error (Joint D&S):   {elasticity_comparison_rc['% Error (Joint)'].mean():.2f}%")
-
 
 # --- DIVERSION RATIO COMPARISON ---
 # Reuse TRUE diversion ratios computed in Q8 to avoid redundancy
@@ -1385,46 +1114,6 @@ print(f"  TRUE model:       {true_avg_diversion_rc[0,0]:.1%} to outside, {true_a
 print(f"  DEMAND-only:      {avg_diversion_rc_est1[0,0]:.1%} to outside, {avg_diversion_rc_est1[0,1]:.1%} to Sat 2")
 print(f"  JOINT D&S:        {avg_diversion_rc_est2[0,0]:.1%} to outside, {avg_diversion_rc_est2[0,1]:.1%} to Sat 2")
 
-# %% [markdown]
-# ### 10.
-# Suppose two of the four firms were to merge. Give a brief
-# intuition for what theory tells us is likely to happen to the equilibrium
-# prices of each good $j$.
-
-# %% [markdown]
-# **Answer:**
-# 
-# When two firms merge, all prices increase. The mechanism: merged firms internalize competition between their own products.
-# 
-# **Pre-merger FOC (firm $f$, product $j$):**
-# $$p_j - mc_j = -\frac{s_j}{\partial s_j/\partial p_j}$$
-# 
-# **Post-merger FOC:**
-# $$p_j - mc_j = -\left[\frac{\partial s_j}{\partial p_j}\right]^{-1}\left[s_j + \sum_{k \in \mathcal{J}_f, k \neq j} \frac{\partial s_k}{\partial p_j}(p_k - mc_k)\right]$$
-# 
-# The additional term $\sum_{k \in \mathcal{J}_f, k \neq j} \frac{\partial s_k}{\partial p_j}(p_k - mc_k)$ captures recaptured demand: customers who switch from $j$ to the merged firm's product $k$.
-# 
-# **Price effects:**
-# 
-# 1. **Merging firms:** Large increases, proportional to diversion ratios
-#    - Change in markup: $\Delta \text{Markup}_j \approx \sum_{k \in \mathcal{J}_f, k \neq j} D_{jk}(p_k - mc_k)$
-#    - Where $D_{jk} = -(\partial s_k/\partial p_j)/(\partial s_j/\partial p_j)$ = fraction of $j$'s lost customers switching to $k$
-# 
-# 2. **Non-merging firms:** Small increases from strategic complementarity
-#    - Higher competitor prices → shift in residual demand → optimal to raise own prices
-#    - Magnitude depends on cross-elasticities
-# 
-# 
-# 
-
-# %% [markdown]
-# ### 11.
-# Suppose firms 1 and 2 are proposing to merge. Use the \texttt{pyBLP}
-# merger simulation procedure to provide a prediction of the post-merger
-# equilibrium prices.
-# 
-
-# %%
 # Baseline marginal costs, markups, profits, and consumer surplus under the estimated demand+supply model
 costs = optimal_iv_results2.compute_costs()
 markups = optimal_iv_results2.compute_markups(costs=costs)
@@ -1508,21 +1197,12 @@ IPython.display.display(merger_results_df.style.format({
 }))
 IPython.display.display(merger_metric_summary.style.format('{:,.3f}'))
 
-
-# %% [markdown]
-# ### 13. 
-# Now suppose instead that firms 1 and 3 are the ones to merge. Re-run the merger
-# simulation. Provide a table comparing the (average across markets) predicted merger-
-# induced price changes for this merger and that in part 11. Interpret the differences
-# between the predictions for the two mergers.
-
-# %%
 # ========================================================================
 # QUESTION 13: MERGER SIMULATION (Firms 1 and 3)
 # ========================================================================
 # Firm 1 is satellite provider, Firm 3 is wired provider (cross-nest merger)
 
-# Note: pre_merger_prices, post_merger_prices, and mean_pct_change_within 
+# Note: pre_merger_prices, post_merger_prices, and mean_pct_change_within
 # already computed in Question 11
 
 # Create merger firm IDs: merge firms 1 and 3 into firm 1
@@ -1592,8 +1272,6 @@ IPython.display.display(merger_results_cross_df.style.format({
     'Price Change (%)': '{:,.2f}'.format,
 }))
 
-
-# %%
 # Comparison table: Within-nest vs Cross-nest mergers
 comparison_df = pd.DataFrame({
     'Product': product_labels,
@@ -1607,9 +1285,6 @@ IPython.display.display(comparison_df.style.format({
     'Cross-Nest (%)': '{:,.2f}'.format,
     'Difference (pp)': '{:,.2f}'.format,
 }))
-
-
-# %%
 
 # ========================================================================
 # PUBLICATION-READY FIGURE: Within-Nest vs. Cross-Nest Merger Comparison
@@ -1650,21 +1325,21 @@ colors_merger = {
 }
 
 # Plot bars with hatching patterns for differentiation
-bars1 = ax.bar(indices - width/2, pct_price_changes, width, 
-               label='Within-Nest (Firms 1 & 2)', 
-               color=colors_merger['within'], 
-               edgecolor='black', 
-               linewidth=1.5, 
-               alpha=1.0, 
+bars1 = ax.bar(indices - width/2, pct_price_changes, width,
+               label='Within-Nest (Firms 1 & 2)',
+               color=colors_merger['within'],
+               edgecolor='black',
+               linewidth=1.5,
+               alpha=1.0,
                zorder=3)
 
-bars2 = ax.bar(indices + width/2, mean_pct_change_cross, width, 
-               label='Cross-Nest (Firms 1 & 3)', 
-               color=colors_merger['cross'], 
-               edgecolor='black', 
-               linewidth=1.5, 
+bars2 = ax.bar(indices + width/2, mean_pct_change_cross, width,
+               label='Cross-Nest (Firms 1 & 3)',
+               color=colors_merger['cross'],
+               edgecolor='black',
+               linewidth=1.5,
                hatch='///',  # Diagonal hatching
-               alpha=1.0, 
+               alpha=1.0,
                zorder=3)
 
 # Horizontal line at zero
@@ -1675,49 +1350,49 @@ for idx, value in enumerate(pct_price_changes):
     if abs(value) > 0.05:  # Only show for non-trivial changes
         va = 'bottom' if value >= 0 else 'top'
         y_offset = 0.25 if value >= 0 else -0.25
-        bbox_props = dict(boxstyle='round,pad=0.3', 
-                         facecolor='white', 
-                         edgecolor='black', 
+        bbox_props = dict(boxstyle='round,pad=0.3',
+                         facecolor='white',
+                         edgecolor='black',
                          linewidth=1)
-        ax.text(indices[idx] - width/2, value + y_offset, 
-                f'{value:.2f}%', 
-                ha='center', va=va, 
-                fontsize=9, 
-                fontweight='bold', 
-                color='black', 
-                bbox=bbox_props, 
+        ax.text(indices[idx] - width/2, value + y_offset,
+                f'{value:.2f}%',
+                ha='center', va=va,
+                fontsize=9,
+                fontweight='bold',
+                color='black',
+                bbox=bbox_props,
                 zorder=4)
 
 for idx, value in enumerate(mean_pct_change_cross):
     if abs(value) > 0.05:
         va = 'bottom' if value >= 0 else 'top'
         y_offset = 0.25 if value >= 0 else -0.25
-        bbox_props = dict(boxstyle='round,pad=0.3', 
-                         facecolor='white', 
-                         edgecolor='black', 
+        bbox_props = dict(boxstyle='round,pad=0.3',
+                         facecolor='white',
+                         edgecolor='black',
                          linewidth=1)
-        ax.text(indices[idx] + width/2, value + y_offset, 
-                f'{value:.2f}%', 
-                ha='center', va=va, 
-                fontsize=9, 
-                fontweight='bold', 
-                color='black', 
-                bbox=bbox_props, 
+        ax.text(indices[idx] + width/2, value + y_offset,
+                f'{value:.2f}%',
+                ha='center', va=va,
+                fontsize=9,
+                fontweight='bold',
+                color='black',
+                bbox=bbox_props,
                 zorder=4)
 
 # Formatting
 ax.set_ylabel('Price Change (%)', fontweight='bold', fontsize=13)
-ax.set_title('Price Effects: Within-Nest vs. Cross-Nest Mergers', 
+ax.set_title('Price Effects: Within-Nest vs. Cross-Nest Mergers',
              fontweight='bold', pad=20, fontsize=14)
 ax.set_xticks(indices)
 ax.set_xticklabels(product_labels, fontweight='semibold')
 
 # Legend with Seaborn-friendly styling
-legend = ax.legend(loc='upper right', 
-                   framealpha=1.0, 
-                   edgecolor='black', 
-                   fancybox=False, 
-                   shadow=False, 
+legend = ax.legend(loc='upper right',
+                   framealpha=1.0,
+                   edgecolor='black',
+                   fancybox=False,
+                   shadow=False,
                    borderpad=1)
 legend.get_frame().set_linewidth(1.0)
 legend.get_frame().set_facecolor('white')
@@ -1737,11 +1412,10 @@ plt.show()
 # Reset to default style
 sns.reset_defaults()
 
-# %%
 ### 15.
 Consider the merger between firms 1 and 2, and suppose the firms
 demonstrate that by merging they would reduce marginal cost of each of their
-products by 15\%. Furthermore, suppose that they demonstrate that this cost
+products by 15%. Furthermore, suppose that they demonstrate that this cost
 reduction could not be achieved without merging.    Using the \texttt{pyBLP} software, re-run the merger simulation
 with the 15\% cost saving. Show the predicted post-merger price changes (again,
 for each product, averaged across markets). What is the predicted impact of
@@ -1754,7 +1428,6 @@ M_{t} $ is the same in each market  $t$? Explain why this additional assumption
 this point it was without loss to assume $M_{t}=1$. What is the predicted
 impact of the merger on total welfare?
 
-# %%
 # Assume same market size M_t for all markets (needed for welfare calculation)
 M_t = 1000
 
@@ -1853,7 +1526,6 @@ efficiency_metric_summary = efficiency_metric_summary.set_index('Metric')
 
 IPython.display.display(efficiency_metric_summary.style.format('{:,.3f}'))
 
-# %%
 # ========================================================================
 # WELFARE ANALYSIS
 # ========================================================================
@@ -1889,16 +1561,16 @@ ps_pre = optimal_iv_results2.compute_profits()
 # Post-merger without efficiency
 shares_post_no_eff = optimal_iv_results2.compute_shares(prices=post_merger_prices)
 ps_post_no_eff = optimal_iv_results2.compute_profits(
-    prices=post_merger_prices, 
-    shares=shares_post_no_eff, 
+    prices=post_merger_prices,
+    shares=shares_post_no_eff,
     costs=marginal_costs
 )
 
 # Post-merger with 15% efficiency
 shares_post_eff = optimal_iv_results2.compute_shares(prices=post_merger_prices_efficiency)
 ps_post_eff = optimal_iv_results2.compute_profits(
-    prices=post_merger_prices_efficiency, 
-    shares=shares_post_eff, 
+    prices=post_merger_prices_efficiency,
+    shares=shares_post_eff,
     costs=marginal_costs_efficiency
 )
 
@@ -1926,7 +1598,6 @@ IPython.display.display(welfare_summary.style.format({
     'ΔW ($)': '{:,.2f}'.format,
 }))
 
-# %%
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
@@ -1973,24 +1644,24 @@ width = 0.5
 # Black and white colors with different patterns
 colors = {
     'CS': '#000000',  # Black for consumer surplus
-    'PS': '#666666',  # Dark gray for producer surplus  
+    'PS': '#666666',  # Dark gray for producer surplus
     'W': '#CCCCCC',   # Light gray for total welfare (readable!)
 }
 
 # Create stacked bars with hatching patterns for differentiation
-bars_cs = ax.bar(x_pos, delta_cs, width, 
-                 label='Consumer Surplus (ΔCS)', 
-                 color=colors['CS'], 
-                 edgecolor='black', 
-                 linewidth=1.5, 
+bars_cs = ax.bar(x_pos, delta_cs, width,
+                 label='Consumer Surplus (ΔCS)',
+                 color=colors['CS'],
+                 edgecolor='black',
+                 linewidth=1.5,
                  alpha=1.0)
 
-bars_ps = ax.bar(x_pos, delta_ps, width, 
-                 bottom=delta_cs, 
-                 label='Producer Surplus (ΔPS)', 
-                 color=colors['PS'], 
-                 edgecolor='black', 
-                 linewidth=1.5, 
+bars_ps = ax.bar(x_pos, delta_ps, width,
+                 bottom=delta_cs,
+                 label='Producer Surplus (ΔPS)',
+                 color=colors['PS'],
+                 edgecolor='black',
+                 linewidth=1.5,
                  hatch='///',  # Diagonal hatching
                  alpha=1.0)
 
@@ -2000,43 +1671,43 @@ ax.axhline(y=0, color='black', linestyle='-', linewidth=1.2, zorder=3)
 # Enhanced value annotations
 for i, (cs, ps, w) in enumerate(zip(delta_cs, delta_ps, delta_w)):
     total_height = cs + ps
-    
+
     # Component values - only show if segment is large enough
     min_size = 4000
-    
+
     if abs(cs) > min_size:
-        ax.text(i, cs/2, f'${cs:,.0f}', 
-                ha='center', va='center', 
+        ax.text(i, cs/2, f'${cs:,.0f}',
+                ha='center', va='center',
                 color='white', fontweight='bold', fontsize=10)
-    
+
     if abs(ps) > min_size:
-        ax.text(i, cs + ps/2, f'${ps:,.0f}', 
-                ha='center', va='center', 
-                color='white', 
+        ax.text(i, cs + ps/2, f'${ps:,.0f}',
+                ha='center', va='center',
+                color='white',
                 fontweight='bold', fontsize=10)
-    
+
     # Add ΔW annotation to the right of each bar
     x_end = i + width/2 + 0.15
     y_annotation = total_height
-    
+
     # Draw connecting line
-    ax.plot([i, x_end], [total_height, y_annotation], 
+    ax.plot([i, x_end], [total_height, y_annotation],
             color='#000000', linewidth=1, linestyle='-', alpha=0.7, zorder=2)
-    
+
     # Add the ΔW label with light gray background
-    bbox_props = dict(boxstyle='round,pad=0.5', 
-                     facecolor=colors['W'], 
-                     edgecolor='black', 
+    bbox_props = dict(boxstyle='round,pad=0.5',
+                     facecolor=colors['W'],
+                     edgecolor='black',
                      linewidth=1.5)
-    ax.text(x_end + 0.05, y_annotation, f'ΔW = ${w:,.0f}', 
-            ha='left', va='center', 
-            fontweight='bold', fontsize=10, 
+    ax.text(x_end + 0.05, y_annotation, f'ΔW = ${w:,.0f}',
+            ha='left', va='center',
+            fontweight='bold', fontsize=10,
             color='black',  # Black text on light gray
             bbox=bbox_props)
 
 # Formatting
 ax.set_ylabel('Aggregate Surplus Change ($)', fontweight='bold', fontsize=13)
-ax.set_title('Welfare Effects of Merger: Firms 1 & 2', 
+ax.set_title('Welfare Effects of Merger: Firms 1 & 2',
              fontweight='bold', pad=20, fontsize=14)
 ax.set_xticks(x_pos)
 ax.set_xticklabels(scenarios, fontweight='semibold')
@@ -2049,16 +1720,16 @@ ax.set_xlim(-0.5, len(scenarios) - 0.2)
 
 # Legend with patterns
 legend_elements = [
-    Patch(facecolor=colors['CS'], edgecolor='black', linewidth=1.5, 
-          label='Change in Consumer Surplus (ΔCS)', alpha=1.0), 
-    Patch(facecolor=colors['PS'], edgecolor='black', linewidth=1.5, 
+    Patch(facecolor=colors['CS'], edgecolor='black', linewidth=1.5,
+          label='Change in Consumer Surplus (ΔCS)', alpha=1.0),
+    Patch(facecolor=colors['PS'], edgecolor='black', linewidth=1.5,
           label='Change in Producer Surplus (ΔPS)', hatch='///', alpha=1.0),
-    Patch(facecolor=colors['W'], edgecolor='black', linewidth=1.5, 
+    Patch(facecolor=colors['W'], edgecolor='black', linewidth=1.5,
           label='Change in Total Welfare (ΔW)', alpha=1.0),
 ]
 
-legend = ax.legend(handles=legend_elements, loc='upper left', 
-                   framealpha=1.0, edgecolor='black', 
+legend = ax.legend(handles=legend_elements, loc='upper left',
+                   framealpha=1.0, edgecolor='black',
                    fancybox=False, shadow=False, borderpad=1)
 legend.get_frame().set_linewidth(1.0)
 legend.get_frame().set_facecolor('white')
@@ -2078,7 +1749,6 @@ plt.show()
 # Reset to default style
 sns.reset_defaults()
 
-# %%
 # ------------------------------------------------------------------------
 # Consolidated diagnostics across all merger scenarios
 # ------------------------------------------------------------------------
@@ -2098,5 +1768,3 @@ numeric_columns = scenario_metric_table.select_dtypes(include='number').columns
 scenario_metric_table[numeric_columns] = scenario_metric_table[numeric_columns].apply(pd.to_numeric, errors='coerce')
 format_dict = {col: '{:,.3f}'.format for col in numeric_columns}
 IPython.display.display(scenario_metric_table.style.format(format_dict))
-
-
