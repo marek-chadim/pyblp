@@ -150,9 +150,6 @@ print(f"MC mean: {product_data['mc'].mean():.3f}, median: {product_data['mc'].me
 print("FOC: (p_jt - mc_jt) * ∂s_jt/∂p_jt + s_jt = 0")
 print("Rearranged: p_jt - mc_jt = - (∂s_jt/∂p_jt)⁻¹ * s_jt")
 
-plt.hist(product_data['mc'], bins=50);
-plt.legend(["Marginal Costs"]);
-
 def solve_prices_direct(market_data, mc_market, nu_draws):
     """Solve for equilibrium prices using direct nonlinear solver with robust matrix inversion"""
     J = len(market_data)
@@ -294,37 +291,19 @@ for i, n_draws in enumerate(draw_counts):
     ratio = eq_stds[i] / initial_stds[i] if initial_stds[i] > 0 else float('inf')
     print(f"{n_draws:6d}\t| {initial_stds[i]:.2e}\t\t| {eq_stds[i]:.2e}\t\t| {ratio:.2f}")
 
-# Summary statistics
-valid_ratios = eq_stds / initial_stds
-avg_ratio = np.mean(valid_ratios)
+# Compute within-nest shares for nested logit
+# Within-nest share = product share / total share of nest in market
+product_data['nest_total_share'] = product_data.groupby(['market_ids', 'satellite'])['shares'].transform('sum')
+product_data['within_share'] = product_data['shares'] / product_data['nest_total_share']
 
-observed_shares = []
-for t in range(T):
-    market_data = product_data[product_data['market_ids'] == t]
-    prices_market = market_data['prices'].values
-    # Use pre-drawn simulation draws for this market
-    shares_market, _, _ = market_shares_and_derivatives(
-        prices_market, market_data, all_nu_draws[t]
-    )
-    observed_shares.extend(shares_market)
-
-product_data['shares'] = observed_shares
-
-print(f"Share range: {product_data['shares'].min():.3f} to {product_data['shares'].max():.3f}")
-print(f"Share mean: {product_data['shares'].mean():.3f}, std: {product_data['shares'].std():.3f}")
-
-# Validation: Check market share sums
-market_share_sums = product_data.groupby('market_ids')['shares'].sum()
-print(f"Market share sums (should be < 1):")
-print(f"Average: {market_share_sums.mean():.3f}")
-print(f"Min: {market_share_sums.min():.3f}, Max: {market_share_sums.max():.3f}")
-print(f"Outside shares: {1 - market_share_sums.mean():.3f} (average)")
-
-# Check by product type
-satellite_shares = product_data[product_data['satellite'] == 1]['shares'].mean()
-wired_shares = product_data[product_data['wired'] == 1]['shares'].mean()
-print(f"Average satellite product share: {satellite_shares:.3f}")
-print(f"Average wired product share: {wired_shares:.3f}")
+# Log within-nest shares (avoid log(0) by using small epsilon)
+epsilon = 1e-10
+product_data['ln_within_share_sat'] = np.where(product_data['satellite'] == 1, 
+                                               np.log(np.maximum(product_data['within_share'], epsilon)), 
+                                               0)
+product_data['ln_within_share_wired'] = np.where(product_data['wired'] == 1, 
+                                                 np.log(np.maximum(product_data['within_share'], epsilon)), 
+                                                 0)
 
 # Create quadratic and interaction columns first
 product_data['x**2'] = product_data['x'] ** 2
@@ -377,16 +356,10 @@ excluded_vars = ['w', 'x**2', 'w**2', 'x*w',
                  'sum_x_competitors', 'sum_w_competitors',
                  'x_other_in_nest', 'w_other_in_nest']
 
-# Create hypothesis string using actual variable names
-hypothesis = ', '.join([f'{var}=0' for var in excluded_vars])
-
 # F-test for excluded instruments in price regression
 price_f_test = price_model.f_test(hypothesis)
 print(f"\n1. Price Regression (Relevance Test)")
 print(f"   R²: {price_model.rsquared:.3f}")
-print(f"   Individual Coefficients:")
-for i, var in enumerate(Z.columns):
-    print(f"     {var:18s}: {price_model.params.iloc[i]:8.3f} (SE: {price_model.bse.iloc[i]:.3f}, t: {price_model.tvalues.iloc[i]:6.2f}, p: {price_model.pvalues.iloc[i]:.3f})")
 print(f"   Excluded demand instruments F-stat: {price_f_test.fvalue:.2f} (p={price_f_test.pvalue:.2e})")
 print(f"   → Excluded instruments are {'relevant' if price_f_test.pvalue < 0.01 else 'weak'} for prices")
 
@@ -394,9 +367,6 @@ print(f"   → Excluded instruments are {'relevant' if price_f_test.pvalue < 0.0
 share_f_test = share_model.f_test(hypothesis)
 print(f"\n2. Share Regression (Relevance Test)")
 print(f"   R²: {share_model.rsquared:.3f}")
-print(f"   Individual Coefficients:")
-for i, var in enumerate(Z.columns):
-    print(f"     {var:18s}: {share_model.params.iloc[i]:8.3f} (SE: {share_model.bse.iloc[i]:.3f}, t: {share_model.tvalues.iloc[i]:6.2f}, p: {share_model.pvalues.iloc[i]:.3f})")
 print(f"   Excluded demand instruments F-stat: {share_f_test.fvalue:.2f} (p={share_f_test.pvalue:.2e})")
 print(f"   → Excluded instruments are {'relevant' if share_f_test.pvalue < 0.01 else 'weak'} for shares")
 
@@ -404,9 +374,6 @@ print(f"   → Excluded instruments are {'relevant' if share_f_test.pvalue < 0.0
 xi_f_test = xi_model.f_test(hypothesis)
 print(f"\n3. ξ Regression (Exclusion Test)")
 print(f"   R²: {xi_model.rsquared:.3f}")
-print(f"   Individual Coefficients:")
-for i, var in enumerate(Z.columns):
-    print(f"     {var:18s}: {xi_model.params.iloc[i]:8.3f} (SE: {xi_model.bse.iloc[i]:.3f}, t: {xi_model.tvalues.iloc[i]:6.2f}, p: {xi_model.pvalues.iloc[i]:.3f})")
 print(f"   Excluded demand instruments F-stat: {xi_f_test.fvalue:.2f} (p={xi_f_test.pvalue:.2e})")
 print(f"   → Excluded instruments are {'exogenous' if xi_f_test.pvalue >= 0.01 else 'endogenous'}")
 
@@ -414,9 +381,6 @@ print(f"   → Excluded instruments are {'exogenous' if xi_f_test.pvalue >= 0.01
 omega_f_test = omega_model.f_test(hypothesis)
 print(f"\n4. ω Regression (Exclusion Test)")
 print(f"   R²: {omega_model.rsquared:.3f}")
-print(f"   Individual Coefficients:")
-for i, var in enumerate(Z.columns):
-    print(f"     {var:18s}: {omega_model.params.iloc[i]:8.3f} (SE: {omega_model.bse.iloc[i]:.3f}, t: {omega_model.tvalues.iloc[i]:6.2f}, p: {omega_model.pvalues.iloc[i]:.3f})")
 print(f"   Excluded demand instruments F-stat: {omega_f_test.fvalue:.2f} (p={omega_f_test.pvalue:.2e})")
 print(f"   → Excluded instruments are {'exogenous' if omega_f_test.pvalue >= 0.01 else 'endogenous'}")
 
@@ -426,7 +390,7 @@ weak_instruments = (
     (price_model.rsquared < 0.05 and share_model.rsquared < 0.05)
 )
 excluded_instruments = (
-    xi_model.f_pvalue < 0.01 or omega_model.f_pvalue < 0.01
+    xi_model.f_pvalue < 0.01 or omega_f_test.f_pvalue < 0.01
 )
 print()
 print("="*75)
@@ -477,10 +441,7 @@ for i, param in enumerate(param_names):
 
 product_data['demand_instruments0'] = product_data['prices']
 ols_problem = pyblp.Problem(pyblp.Formulation('0 + prices + x + satellite + wired '), product_data)
-ols_problem
-
 ols_results = ols_problem.solve(method='1s')
-ols_results
 
 pd.DataFrame(index=ols_results.beta_labels, data={
     ("Estimates", "Manual OLS"): beta_hat,
@@ -521,13 +482,33 @@ print(f"  R² = {R2_first_stage:.4f}")
 print(f"  F-statistic (excluded instruments) = {F_stat:.2f} (p = {p_value_F:.4f})")
 print()
 
+# First stage for nested logit (moved here to be available for 2SLS)
+# Define variables
+exog_vars = ["x", "satellite", "wired"]
+endog_vars = ["prices", "ln_within_share_sat", "ln_within_share_wired"]
+instr_vars = ["w", "x**2", "w**2", "x*w", "sum_x_competitors", "sum_w_competitors", "x_other_in_nest", "w_other_in_nest"]
+Z_vars = exog_vars + instr_vars
+
+# First stage: Z = exog + instr
+Z_nested = product_data[Z_vars].values
+
+# First stage OLS for each endog
+n_endog = len(endog_vars)
+endog_hat = np.zeros((len(product_data), n_endog))
+for i, var in enumerate(endog_vars):
+    y_endog = product_data[var].values
+    sigma = np.linalg.inv(Z_nested.T @ Z_nested) @ Z_nested.T @ y_endog
+    endog_hat[:, i] = Z_nested @ sigma
+
 # Second stage: Regress logit_delta on x + satellite + wired + predicted_prices
 y = product_data['logit_delta'].values
 X_hat = np.column_stack([
     prices_hat,  # Use predicted prices from first stage
     product_data['x'].values,
     product_data['satellite'].values,
-    product_data['wired'].values
+    product_data['wired'].values,
+    endog_hat[:, 1],  # ln_within_share_sat_hat
+    endog_hat[:, 2]   # ln_within_share_wired_hat
 ])
 
 # 2SLS estimates: beta_hat_iv = (X_hat^T X_hat)^(-1) X_hat^T y
@@ -536,10 +517,12 @@ beta_hat_iv = np.linalg.inv(X_hat.T @ X_hat) @ X_hat.T @ y
 # Compute 2SLS standard errors (HC0 robust)
 # Need to use original regressors X, not fitted X_hat
 X = np.column_stack([
-    product_data['prices'].values,  # Use actual prices for residuals and variance
-    product_data['x'].values,
-    product_data['satellite'].values,
-    product_data['wired'].values
+    product_data["prices"].values,
+    product_data["x"].values,
+    product_data["satellite"].values,
+    product_data["wired"].values,
+    product_data["ln_within_share_sat"].values,
+    product_data["ln_within_share_wired"].values
 ])
 
 residuals_iv = y - X @ beta_hat_iv
@@ -561,136 +544,13 @@ p_values_iv = 2 * (1 - stats.norm.cdf(np.abs(t_stats_iv)))
 print("2SLS IV Regression: ln(s_jt/s_0t) ~ x + satellite + wired + prices_hat (no intercept)")
 print("First stage instruments: x, w, x², w², x*w, sum_x_competitors, sum_w_competitors")
 print("-" * 80)
-param_names = ['prices', 'x', 'satellite', 'wired']
-for i, param in enumerate(param_names):
-    print(f"{param:12s}: {beta_hat_iv[i]:8.3f} (SE: {se_iv[i]:.3f}, t: {t_stats_iv[i]:6.2f}, p: {p_values_iv[i]:.3f})")
-
-# Add demand instruments for PyBLP
-product_data['demand_instruments0'] = product_data['w']
-product_data['demand_instruments1'] = product_data['x**2']
-product_data['demand_instruments2'] = product_data['w**2']
-product_data['demand_instruments3'] = product_data['x*w']
-product_data['demand_instruments4'] = product_data['sum_x_competitors']
-product_data['demand_instruments5'] = product_data['sum_w_competitors']
-
-iv_problem = pyblp.Problem(pyblp.Formulation('0 + prices + x + satellite + wired'), product_data)
-iv_problem
-
-iv_results = iv_problem.solve(method='1s')
-iv_results
-
-pd.DataFrame(index=iv_results.beta_labels, data={
-    ("Estimates", "Manual IV"): beta_hat_iv,
-    ("Estimates", "PyBLP IV"): iv_results.beta.flat,
-    ("SEs", "Manual IV"): se_iv,
-    ("SEs", "PyBLP IV"): iv_results.beta_se.flat
-})
-
-# Compute ln_within_share
-product_data["group_share"] = product_data.groupby(["market_ids", "satellite"])["shares"].transform("sum")
-product_data["ln_within_share"] = np.log(product_data["shares"] / product_data["group_share"])
-
-# Create nest-specific ln_within_share
-product_data["ln_within_share_sat"] = product_data["ln_within_share"] * product_data["satellite"]
-product_data["ln_within_share_wired"] = product_data["ln_within_share"] * product_data["wired"]
-
-# Define variables
-exog_vars = ["x", "satellite", "wired"]
-endog_vars = ["prices", "ln_within_share_sat", "ln_within_share_wired"]
-instr_vars = ["w", "x**2", "w**2", "x*w", "sum_x_competitors", "sum_w_competitors", "x_other_in_nest", "w_other_in_nest"]
-Z_vars = exog_vars + instr_vars
-
-# First stage: Z = exog + instr
-Z = product_data[Z_vars].values
-
-# First stage OLS for each endog
-n_endog = len(endog_vars)
-sigma_hat = np.zeros((Z.shape[1], n_endog))
-endog_hat = np.zeros((len(product_data), n_endog))
-for i, var in enumerate(endog_vars):
-    y_endog = product_data[var].values
-    sigma = np.linalg.inv(Z.T @ Z) @ Z.T @ y_endog
-    sigma_hat[:, i] = sigma
-    endog_hat[:, i] = Z @ sigma
-
-# Second stage: Regress logit_delta on exog + predicted_endog, reordered to match PyBLP
-y = product_data["logit_delta"].values
-X_hat = np.column_stack([
-    endog_hat[:, 0],  # prices_hat
-    product_data["x"].values,
-    product_data["satellite"].values,
-    product_data["wired"].values,
-    endog_hat[:, 1],  # ln_within_share_sat_hat
-    endog_hat[:, 2]   # ln_within_share_wired_hat
-])
-
-# 2SLS estimates
-beta_hat_iv_nested = np.linalg.inv(X_hat.T @ X_hat) @ X_hat.T @ y
-
-# Compute robust standard errors (HC0) - CORRECTED for 2SLS
-# Need to use original regressors X, not fitted X_hat
-X = np.column_stack([
-    product_data["prices"].values,
-    product_data["x"].values,
-    product_data["satellite"].values,
-    product_data["wired"].values,
-    product_data["ln_within_share_sat"].values,
-    product_data["ln_within_share_wired"].values
-])
-residuals_iv = y - X @ beta_hat_iv_nested
-P_Z = Z @ np.linalg.inv(Z.T @ Z) @ Z.T
-Omega = np.diag(residuals_iv**2)
-XPZ = X.T @ P_Z
-bread = np.linalg.inv(XPZ @ X)
-meat = XPZ @ Omega @ P_Z @ X
-cov_matrix_iv = bread @ meat @ bread
-se_iv_nested = np.sqrt(np.diag(cov_matrix_iv))
-t_stats_iv = beta_hat_iv_nested / se_iv_nested
-p_values_iv = 2 * (1 - stats.norm.cdf(np.abs(t_stats_iv)))
-
-print("2SLS IV Regression: ln(s_jt/s_0t) ~ prices + x + satellite + wired + ln_within_share_sat + ln_within_share_wired (no intercept)")
-print("First stage instruments: " + ", ".join(Z_vars))
-print("-" * 120)
 param_names = ["prices", "x", "satellite", "wired", "ln_within_share_sat", "ln_within_share_wired"]
 for i, param in enumerate(param_names):
-    print(f"{param:20s}: {beta_hat_iv_nested[i]:8.3f} (SE: {se_iv_nested[i]:.3f}, t: {t_stats_iv[i]:6.2f}, p: {p_values_iv[i]:.3f})")
-
-# Prepare data for nested logit
-# Note: nesting_ids needed for PyBLP, but use satellite/wired for groupby where possible
-product_data['nesting_ids'] = product_data['satellite'].map({1: 'satellite', 0: 'wired'})
-product_data['demand_instruments6'] = product_data['x_other_in_nest']
-product_data['demand_instruments7'] = product_data['w_other_in_nest']
-
-# Nested logit formulation
-nl_problem = pyblp.Problem(pyblp.Formulation('0 + prices + x + satellite + wired'), product_data)
-
-rho_initial = [0.7, 0.7]  # Initial values for rho_sat and rho_wired
-nl_results = nl_problem.solve(rho=rho_initial, method='1s')
-nl_results
-
-# Compare manual nested logit estimates with PyBLP nested logit estimates for beta
-nested_beta_comparison = pd.DataFrame(index=nl_results.beta_labels, data={
-    ("Estimates", "Manual Nested"): beta_hat_iv_nested[:4],  # prices, x, satellite, wired
-    ("Estimates", "PyBLP Nested"): nl_results.beta.flat,
-    ("SEs", "Manual Nested"): se_iv_nested[:4],
-    ("SEs", "PyBLP Nested"): nl_results.beta_se.flat
-})
-
-print("Beta Comparison for Nested Logit:")
-print(nested_beta_comparison)
-
-# Compare rho estimates
-nested_rho_comparison = pd.DataFrame(index=nl_results.rho_labels, data={
-    ("Estimates", "Manual Nested"): beta_hat_iv_nested[4:],  # rho_sat, rho_wired
-    ("Estimates", "PyBLP Nested"): nl_results.rho.flat,
-    ("SEs", "Manual Nested"): se_iv_nested[4:],
-    ("SEs", "PyBLP Nested"): nl_results.rho_se.flat
-})
-
-print("\nRho Comparison for Nested Logit:")
-print(nested_rho_comparison)
+    print(f"{param:20s}: {beta_hat_iv[i]:8.3f} (SE: {se_iv[i]:.3f}, t: {t_stats_iv[i]:6.2f}, p: {p_values_iv[i]:.3f})")
 
 # Extract nested logit parameters
+beta_hat_iv_nested = beta_hat_iv
+se_iv_nested = se_iv
 alpha_nl, beta_x_nl, rho_sat_nl, rho_wired_nl = beta_hat_iv_nested[[0, 1, 4, 5]]
 
 def compute_nested_logit_elasticities_analytic(market_df, alpha, beta_x, rho_sat, rho_wired):
@@ -843,10 +703,9 @@ print("="*70 + "\n")
 product_data['true_elasticity_rc'] = [true_elasticity_matrices[t][j, j] for t in range(T) for j in range(J)]
 product_data['estimated_elasticity_nl'] = [elasticity_matrices_analytic[t][j, j] for t in range(T) for j in range(J)]
 
-elasticities_nl = nl_results.compute_elasticities()
-avg_elasticities_nl = elasticities_nl.reshape((T, J, J)).mean(axis=0)
-own_elasticities_nl = np.diag(avg_elasticities_nl)
-own_elasticities_nl
+# ============================================================================
+# PyBLP Nested Logit Estimation
+# ============================================================================
 
 # ============================================================================
 # DIVERSION RATIOS
@@ -935,8 +794,6 @@ print("Off-diagonal: share of j's lost customers who switch to k")
 print("Diagonal: share of j's lost customers who leave the market (outside)")
 print("=" * 70)
 
-product_data.drop(columns=['nesting_ids'], inplace=True)
-
 X1_formulation = pyblp.Formulation('0 + prices + x + satellite + wired')
 X2_formulation = pyblp.Formulation('0 + satellite + wired')
 product_formulations1 = (X1_formulation, X2_formulation)
@@ -952,9 +809,8 @@ integration = pyblp.Integration('product', 10)
 problem1 = pyblp.Problem(product_formulations1, product_data, integration=integration)
 results1 = problem1.solve(sigma=np.eye(2), initial_update=True)
 optimal_iv1 = results1.compute_optimal_instruments(seed=1995)
-optimal_problem1 = optimal_iv1.to_problem()
-optimal_iv_results1 = optimal_problem1.solve(sigma=np.eye(2), initial_update=True)
-optimal_iv_results1
+optimal_iv1.to_problem()
+optimal_iv_results1 = optimal_iv1.to_problem().solve(sigma=np.eye(2), initial_update=True)
 
 X3_formulation = pyblp.Formulation('1 + w')
 product_formulations2 = (X1_formulation, X2_formulation, X3_formulation)
@@ -976,10 +832,6 @@ for i in range(optimal_iv2.demand_instruments.shape[1]-3):
 problem3 = pyblp.Problem(product_formulations2, product_data,
                          costs_type='log', integration=integration)
 optimal_iv_results2 = problem3.solve(sigma=np.eye(2), beta=results2.beta, initial_update=True)
-
-optimal_iv_results1
-
-optimal_iv_results2
 
 # Compare individual and joint PyBLP estimates for beta
 pyblp_beta_comparison = pd.DataFrame(index=optimal_iv_results1.beta_labels, data={
@@ -1007,6 +859,7 @@ pyblp_gamma_comparison = pd.DataFrame(index=optimal_iv_results2.gamma_labels, da
     ("SEs", "PyBLP D & S"): optimal_iv_results2.gamma_se.flat,
 })
 print(pyblp_gamma_comparison)
+
 
 # ============================================================================
 # Q9: Compare TRUE vs ESTIMATED Random Coefficients Elasticities/Diversions
@@ -1098,13 +951,6 @@ print("Diagonal = diversion to outside option D_j0")
 est_div_df_rc2 = pd.DataFrame(avg_diversion_rc_est2, index=product_labels, columns=product_labels)
 print(est_div_df_rc2.to_string(float_format=lambda x: f'{x:7.4f}'))
 
-# Calculate diversion errors
-div_error_d_only = np.abs((avg_diversion_rc_est1 - true_avg_diversion_rc) / true_avg_diversion_rc * 100)
-div_error_joint = np.abs((avg_diversion_rc_est2 - true_avg_diversion_rc) / true_avg_diversion_rc * 100)
-print(f"  • True model (σ=1.0):                 {true_avg_diversion_rc[0,0]:.1%} to outside")
-print(f"  • Demand-only (σ_sat={optimal_iv_results1.sigma[0,0]:.2f}, σ_wired={optimal_iv_results1.sigma[1,1]:.2f}): {avg_diversion_rc_est1[0,0]:.1%} to outside")
-print(f"  • Joint D&S (σ_sat={optimal_iv_results2.sigma[0,0]:.2f}, σ_wired={optimal_iv_results2.sigma[1,1]:.2f}):   {avg_diversion_rc_est2[0,0]:.1%} to outside")
-print()
 print(f"Mean Absolute % Error in Diversion Ratios:")
 print(f"  • Demand-only: {div_error_d_only.mean():.2f}%")
 print(f"  • Joint D&S:   {div_error_joint.mean():.2f}%")
@@ -1412,22 +1258,6 @@ plt.show()
 # Reset to default style
 sns.reset_defaults()
 
-### 15.
-Consider the merger between firms 1 and 2, and suppose the firms
-demonstrate that by merging they would reduce marginal cost of each of their
-products by 15%. Furthermore, suppose that they demonstrate that this cost
-reduction could not be achieved without merging.    Using the \texttt{pyBLP} software, re-run the merger simulation
-with the 15\% cost saving. Show the predicted post-merger price changes (again,
-for each product, averaged across markets). What is the predicted impact of
-the merger on consumer welfare,\footnote{%
-Note that because we have quasilinear preferences, consumer surplus is a
-valid measure of aggregate consumer welfare under the usual assumption of
-optimal redistribution.} assuming that the total measure of consumers $%
-M_{t} $ is the same in each market  $t$? Explain why this additional assumption
-(or data on the correct values of $M_{t}$) is needed here, whereas up to
-this point it was without loss to assume $M_{t}=1$. What is the predicted
-impact of the merger on total welfare?
-
 # Assume same market size M_t for all markets (needed for welfare calculation)
 M_t = 1000
 
@@ -1569,9 +1399,9 @@ ps_post_no_eff = optimal_iv_results2.compute_profits(
 # Post-merger with 15% efficiency
 shares_post_eff = optimal_iv_results2.compute_shares(prices=post_merger_prices_efficiency)
 ps_post_eff = optimal_iv_results2.compute_profits(
-    prices=post_merger_prices_efficiency,
-    shares=shares_post_eff,
-    costs=marginal_costs_efficiency
+    post_merger_prices_efficiency,
+    shares_post_eff,
+    marginal_costs_efficiency
 )
 
 # Total PS changes = M_t * sum over all products/markets
@@ -1741,7 +1571,7 @@ plt.tight_layout()
 
 # Save
 plt.savefig('surplus_changes_merger.pdf', format='pdf', bbox_inches='tight', dpi=300)
-plt.savefig('surplus_changes_merger.png', format='png', bbox_inches='tight', dpi=300)
+plt.savefig('surpus_changes_merger.png', format='png', bbox_inches='tight', dpi=300)
 print('✓ Publication-ready black and white figures saved')
 
 plt.show()
