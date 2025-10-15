@@ -291,19 +291,41 @@ for i, n_draws in enumerate(draw_counts):
     ratio = eq_stds[i] / initial_stds[i] if initial_stds[i] > 0 else float('inf')
     print(f"{n_draws:6d}\t| {initial_stds[i]:.2e}\t\t| {eq_stds[i]:.2e}\t\t| {ratio:.2f}")
 
-# Compute within-nest shares for nested logit
-# Within-nest share = product share / total share of nest in market
-product_data['nest_total_share'] = product_data.groupby(['market_ids', 'satellite'])['shares'].transform('sum')
-product_data['within_share'] = product_data['shares'] / product_data['nest_total_share']
+# Compute shares
+observed_shares = []
+for t in range(T):
+    market_data = product_data[product_data['market_ids'] == t]
+    prices_market = market_data['prices'].values
+    # Use pre-drawn simulation draws for this market
+    shares_market, _, _ = market_shares_and_derivatives(
+        prices_market, market_data, all_nu_draws[t]
+    )
+    observed_shares.extend(shares_market)
 
-# Log within-nest shares (avoid log(0) by using small epsilon)
-epsilon = 1e-10
-product_data['ln_within_share_sat'] = np.where(product_data['satellite'] == 1, 
-                                               np.log(np.maximum(product_data['within_share'], epsilon)), 
-                                               0)
-product_data['ln_within_share_wired'] = np.where(product_data['wired'] == 1, 
-                                                 np.log(np.maximum(product_data['within_share'], epsilon)), 
-                                                 0)
+product_data['shares'] = observed_shares
+print(f"Share range: {product_data['shares'].min():.3f} to {product_data['shares'].max():.3f}")
+print(f"Share mean: {product_data['shares'].mean():.3f}, std: {product_data['shares'].std():.3f}")
+
+# Validation: Check market share sums
+market_share_sums = product_data.groupby('market_ids')['shares'].sum()
+print(f"Market share sums (should be < 1):")
+print(f"Average: {market_share_sums.mean():.3f}")
+print(f"Min: {market_share_sums.min():.3f}, Max: {market_share_sums.max():.3f}")
+print(f"Outside shares: {1 - market_share_sums.mean():.3f} (average)")
+
+# Check by product type
+satellite_shares = product_data[product_data['satellite'] == 1]['shares'].mean()
+wired_shares = product_data[product_data['wired'] == 1]['shares'].mean()
+print(f"Average satellite product share: {satellite_shares:.3f}")
+print(f"Average wired product share: {wired_shares:.3f}")
+
+# Create ln_within_share
+product_data["group_share"] = product_data.groupby(["market_ids", "satellite"])["shares"].transform("sum")
+product_data["ln_within_share"] = np.log(product_data["shares"] / product_data["group_share"])
+
+# Create nest-specific ln_within_share
+product_data["ln_within_share_sat"] = product_data["ln_within_share"] * product_data["satellite"]
+product_data["ln_within_share_wired"] = product_data["ln_within_share"] * product_data["wired"]
 
 # Create quadratic and interaction columns first
 product_data['x**2'] = product_data['x'] ** 2
@@ -356,6 +378,9 @@ excluded_vars = ['w', 'x**2', 'w**2', 'x*w',
                  'sum_x_competitors', 'sum_w_competitors',
                  'x_other_in_nest', 'w_other_in_nest']
 
+# Create hypothesis string using actual variable names
+hypothesis = ', '.join([f'{var}=0' for var in excluded_vars])
+
 # F-test for excluded instruments in price regression
 price_f_test = price_model.f_test(hypothesis)
 print(f"\n1. Price Regression (Relevance Test)")
@@ -390,7 +415,7 @@ weak_instruments = (
     (price_model.rsquared < 0.05 and share_model.rsquared < 0.05)
 )
 excluded_instruments = (
-    xi_model.f_pvalue < 0.01 or omega_f_test.f_pvalue < 0.01
+    xi_f_test.pvalue < 0.01 or omega_f_test.pvalue < 0.01
 )
 print()
 print("="*75)
@@ -950,6 +975,10 @@ print("=" * 80)
 print("Diagonal = diversion to outside option D_j0")
 est_div_df_rc2 = pd.DataFrame(avg_diversion_rc_est2, index=product_labels, columns=product_labels)
 print(est_div_df_rc2.to_string(float_format=lambda x: f'{x:7.4f}'))
+
+# Calculate diversion errors
+div_error_d_only = np.abs((avg_diversion_rc_est1 - true_avg_diversion_rc) / true_avg_diversion_rc * 100)
+div_error_joint = np.abs((avg_diversion_rc_est2 - true_avg_diversion_rc) / true_avg_diversion_rc * 100)
 
 print(f"Mean Absolute % Error in Diversion Ratios:")
 print(f"  • Demand-only: {div_error_d_only.mean():.2f}%")
